@@ -84,6 +84,25 @@ func (k *BackgroundSubtractorKNN) SetHistory(history int) {
 	return
 }
 
+func (k *BackgroundSubtractorKNN) GetDetectShadows() bool {
+	res := C.BackgroundSubtractorKNN_GetDetectShadows((C.BackgroundSubtractorKNN)(k.p))
+	if int(res) == 0 {
+		return false
+	}
+	return true
+}
+
+func (k *BackgroundSubtractorKNN) SetDetectShadows(detectShadows bool) {
+	var n int
+	if detectShadows {
+		n = 1
+	} else {
+		n = 0
+	}
+	C.BackgroundSubtractorKNN_SetDetectShadows((C.BackgroundSubtractorKNN)(k.p), C.int(n))
+	return
+}
+
 // CalcOpticalFlowFarneback computes a dense optical flow using
 // Gunnar Farneback's algorithm.
 //
