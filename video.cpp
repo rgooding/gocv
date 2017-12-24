@@ -24,6 +24,14 @@ void BackgroundSubtractorKNN_Apply(BackgroundSubtractorKNN k, Mat src, Mat dst) 
     (*k)->apply(*src, *dst);
 }
 
+int BackgroundSubtractorKNN_GetHistory(BackgroundSubtractorKNN k) {
+    return (*k)->getHistory();
+}
+
+void BackgroundSubtractorKNN_SetHistory(BackgroundSubtractorKNN k, int history) {
+    (*k)->setHistory(history);
+}
+
 void CalcOpticalFlowFarneback(Mat prevImg, Mat nextImg, Mat flow, double scale, int levels,
                               int winsize, int iterations, int polyN, double polySigma, int flags) {
     cv::calcOpticalFlowFarneback(*prevImg, *nextImg, *flow, scale, levels, winsize, iterations, polyN,

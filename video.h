@@ -23,6 +23,8 @@ void BackgroundSubtractorMOG2_Apply(BackgroundSubtractorMOG2 b, Mat src, Mat dst
 BackgroundSubtractorKNN BackgroundSubtractorKNN_Create();
 void BackgroundSubtractorKNN_Close(BackgroundSubtractorKNN b);
 void BackgroundSubtractorKNN_Apply(BackgroundSubtractorKNN b, Mat src, Mat dst);
+int BackgroundSubtractorKNN_GetHistory(BackgroundSubtractorKNN k);
+void BackgroundSubtractorKNN_SetHistory(BackgroundSubtractorKNN k, int history);
 
 void CalcOpticalFlowPyrLK(Mat prevImg, Mat nextImg, Mat prevPts, Mat nextPts, Mat status, Mat err);
 void CalcOpticalFlowFarneback(Mat prevImg, Mat nextImg, Mat flow, double pyrScale, int levels,
