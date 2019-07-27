@@ -26,6 +26,10 @@ BackgroundSubtractorKNN BackgroundSubtractorKNN_CreateWithParams(int history, do
 
 void BackgroundSubtractorKNN_Close(BackgroundSubtractorKNN b);
 void BackgroundSubtractorKNN_Apply(BackgroundSubtractorKNN b, Mat src, Mat dst);
+int BackgroundSubtractorKNN_GetHistory(BackgroundSubtractorKNN k);
+void BackgroundSubtractorKNN_SetHistory(BackgroundSubtractorKNN k, int history);
+int BackgroundSubtractorKNN_GetDetectShadows(BackgroundSubtractorKNN k);
+void BackgroundSubtractorKNN_SetDetectShadows(BackgroundSubtractorKNN k, int detectShadows);
 
 void CalcOpticalFlowPyrLK(Mat prevImg, Mat nextImg, Mat prevPts, Mat nextPts, Mat status, Mat err);
 void CalcOpticalFlowPyrLKWithParams(Mat prevImg, Mat nextImg, Mat prevPts, Mat nextPts, Mat status, Mat err, Size winSize, int maxLevel, TermCriteria criteria, int flags, double minEigThreshold);
