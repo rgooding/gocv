@@ -222,6 +222,33 @@ func TestDilate(t *testing.T) {
 	}
 }
 
+func TestDistanceTransform(t *testing.T) {
+	img := IMRead("images/face-detect.jpg", IMReadColor)
+	if img.Empty() {
+		t.Error("Invalid read of Mat in DistanceTransform test")
+	}
+	defer img.Close()
+
+	gray := NewMat()
+	defer gray.Close()
+	CvtColor(img, &gray, ColorBGRToGray)
+
+	threshImg := NewMat()
+	defer threshImg.Close()
+	Threshold(gray, &threshImg, 25, 255, ThresholdBinary)
+
+	dest := NewMat()
+	defer dest.Close()
+
+	labels := NewMat()
+	defer labels.Close()
+
+	DistanceTransform(threshImg, &dest, &labels, DistL2, DistanceMask3, DistanceLabelCComp)
+	if dest.Empty() || dest.Rows() != img.Rows() || img.Cols() != dest.Cols() {
+		t.Error("Invalid DistanceTransform test")
+	}
+}
+
 func TestMatchTemplate(t *testing.T) {
 	imgScene := IMRead("images/face.jpg", IMReadGrayScale)
 	if imgScene.Empty() {
@@ -343,6 +370,30 @@ func TestMinAreaRect(t *testing.T) {
 	}
 	if m.Angle != -45.0 {
 		t.Errorf("TestMinAreaRect(): unexpected angle = %v, want = %v", m.Angle, -45.0)
+	}
+}
+
+func TestFitEllipse(t *testing.T) {
+	src := []image.Point{
+		image.Pt(1, 1),
+		image.Pt(0, 1),
+		image.Pt(0, 2),
+		image.Pt(1, 3),
+		image.Pt(2, 3),
+		image.Pt(4, 2),
+		image.Pt(4, 1),
+		image.Pt(0, 3),
+		image.Pt(0, 2),
+	}
+	rect := FitEllipse(src)
+	if rect.Center.X != 2 {
+		t.Errorf("TestFitEllipse(): unexpected center.X = %v, want = %v", rect.Center.X, 2)
+	}
+	if rect.Center.Y != 2 {
+		t.Errorf("TestFitEllipse(): unexpected center.Y = %v, want = %v", rect.Center.Y, 2)
+	}
+	if rect.Angle != 78.60807800292969 {
+		t.Errorf("TestFitEllipse(): unexpected angle = %v, want = %v", rect.Angle, 78.60807800292969)
 	}
 }
 
@@ -473,6 +524,25 @@ func TestErode(t *testing.T) {
 	}
 }
 
+func TestErodeWithParams(t *testing.T) {
+	img := IMRead("images/face-detect.jpg", IMReadColor)
+	if img.Empty() {
+		t.Error("Invalid read of Mat in ErodeWithParams test")
+	}
+	defer img.Close()
+
+	dest := NewMat()
+	defer dest.Close()
+
+	kernel := GetStructuringElement(MorphRect, image.Pt(1, 1))
+	defer kernel.Close()
+
+	ErodeWithParams(img, &dest, kernel, image.Pt(-1, -1), 3, 0)
+	if dest.Empty() || img.Rows() != dest.Rows() || img.Cols() != dest.Cols() {
+		t.Error("Invalid ErodeWithParams test")
+	}
+}
+
 func TestMorphologyDefaultBorderValue(t *testing.T) {
 	zeroScalar := Scalar{}
 	morphologyDefaultBorderValue := MorphologyDefaultBorderValue()
@@ -502,6 +572,25 @@ func TestMorphologyEx(t *testing.T) {
 	}
 }
 
+func TestMorphologyExWithParams(t *testing.T) {
+	img := IMRead("images/face-detect.jpg", IMReadColor)
+	if img.Empty() {
+		t.Error("Invalid read of Mat in MorphologyEx test")
+	}
+	defer img.Close()
+
+	dest := NewMat()
+	defer dest.Close()
+
+	kernel := GetStructuringElement(MorphRect, image.Pt(1, 1))
+	defer kernel.Close()
+
+	MorphologyExWithParams(img, &dest, MorphOpen, kernel, 2, BorderConstant)
+	if dest.Empty() || img.Rows() != dest.Rows() || img.Cols() != dest.Cols() {
+		t.Error("Invalid MorphologyExWithParams test")
+	}
+}
+
 func TestGaussianBlur(t *testing.T) {
 	img := IMRead("images/face-detect.jpg", IMReadColor)
 	if img.Empty() {
@@ -516,6 +605,24 @@ func TestGaussianBlur(t *testing.T) {
 	if dest.Empty() || img.Rows() != dest.Rows() || img.Cols() != dest.Cols() {
 		t.Error("Invalid Blur test")
 	}
+}
+
+func TestGetGaussianKernel(t *testing.T) {
+	kernel := GetGaussianKernel(1, 0.5)
+	defer kernel.Close()
+	if kernel.Empty() {
+		t.Error("Invalid GetGaussianKernel test")
+	}
+
+}
+
+func TestGetGaussianKernelWithParams(t *testing.T) {
+	kernel := GetGaussianKernelWithParams(1, 0.5, MatTypeCV64F)
+	defer kernel.Close()
+	if kernel.Empty() {
+		t.Error("Invalid GetGaussianKernel test")
+	}
+
 }
 
 func TestLaplacian(t *testing.T) {
@@ -560,7 +667,7 @@ func TestMedianBlur(t *testing.T) {
 	dest := NewMat()
 	defer dest.Close()
 
-	MedianBlur(img, &dest, 1)
+	MedianBlur(img, &dest, 3)
 	if dest.Empty() || img.Rows() != dest.Rows() || img.Cols() != dest.Cols() {
 		t.Error("Invalid MedianBlur test")
 	}
@@ -623,6 +730,36 @@ func TestGoodFeaturesToTrackAndCornerSubPix(t *testing.T) {
 	}
 }
 
+func TestGrabCut(t *testing.T) {
+	img := IMRead("images/face-detect.jpg", IMReadGrayScale)
+	if img.Empty() {
+		t.Error("Invalid read of Mat in GrabCut test")
+	}
+	defer img.Close()
+
+	src := NewMat()
+	defer src.Close()
+	CvtColor(img, &img, ColorRGBAToBGR)
+	img.ConvertTo(&src, MatTypeCV8UC3)
+
+	mask := NewMatWithSize(img.Rows(), img.Cols(), MatTypeCV8U)
+	defer mask.Close()
+
+	bgdModel := NewMat()
+	defer bgdModel.Close()
+	fgdModel := NewMat()
+	defer fgdModel.Close()
+
+	r := image.Rect(0, 0, 50, 50)
+
+	GrabCut(src, &mask, r, &bgdModel, &fgdModel, 1, GCEval)
+	if bgdModel.Empty() {
+		t.Error("Empty bgdmodel")
+	} else if fgdModel.Empty() {
+		t.Error("Empty fgdmodel")
+	}
+}
+
 func TestHoughCircles(t *testing.T) {
 	img := IMRead("images/face-detect.jpg", IMReadGrayScale)
 	if img.Empty() {
@@ -681,7 +818,8 @@ func TestHoughLines(t *testing.T) {
 	if dest.Empty() {
 		t.Error("Empty HoughLines test")
 	}
-	if dest.Rows() != 10411 {
+	rowsDiff := dest.Rows() - 10411
+	if rowsDiff > 2 || rowsDiff < 0 {
 		t.Errorf("Invalid HoughLines test rows: %v", dest.Rows())
 	}
 	if dest.Cols() != 1 {
@@ -835,6 +973,26 @@ func TestHoughLinesPointSet(t *testing.T) {
 	}
 }
 
+func TestIntegral(t *testing.T) {
+	img := IMRead("images/face-detect.jpg", IMReadColor)
+	if img.Empty() {
+		t.Error("Invalid read of Mat in Integral test")
+	}
+	defer img.Close()
+
+	sum := NewMat()
+	defer sum.Close()
+	sqSum := NewMat()
+	defer sqSum.Close()
+	tilted := NewMat()
+	defer tilted.Close()
+
+	Integral(img, &sum, &sqSum, &tilted)
+	if sum.Empty() || sqSum.Empty() || tilted.Empty() {
+		t.Error("Invalid Integral test")
+	}
+}
+
 func TestThreshold(t *testing.T) {
 	img := IMRead("images/face-detect.jpg", IMReadColor)
 	if img.Empty() {
@@ -901,6 +1059,54 @@ func TestCalcHist(t *testing.T) {
 	}
 }
 
+func TestCalcBackProject(t *testing.T) {
+	img := IMRead("images/face-detect.jpg", IMReadGrayScale)
+	if img.Empty() {
+		t.Error("Invalid read of Mat in CalcHist test")
+	}
+	defer img.Close()
+
+	hist := NewMat()
+	defer hist.Close()
+
+	backProject := NewMat()
+	defer backProject.Close()
+
+	mask := NewMat()
+	defer mask.Close()
+
+	CalcHist([]Mat{img}, []int{0}, mask, &hist, []int{256}, []float64{0.0, 256.0}, false)
+	CalcBackProject([]Mat{img}, []int{0}, hist, &backProject, []float64{0.0, 256.0}, false)
+	if backProject.Empty() {
+		t.Error("Invalid CalcBackProject test")
+	}
+}
+
+func TestCompareHist(t *testing.T) {
+	img := IMRead("images/face-detect.jpg", IMReadGrayScale)
+	if img.Empty() {
+		t.Error("Invalid read of Mat in CompareHist test")
+	}
+	defer img.Close()
+
+	hist1 := NewMat()
+	defer hist1.Close()
+
+	hist2 := NewMat()
+	defer hist2.Close()
+
+	mask := NewMat()
+	defer mask.Close()
+
+	CalcHist([]Mat{img}, []int{0}, mask, &hist1, []int{256}, []float64{0.0, 256.0}, false)
+	CalcHist([]Mat{img}, []int{0}, mask, &hist2, []int{256}, []float64{0.0, 256.0}, false)
+	dist := CompareHist(hist1, hist2, HistCmpCorrel)
+	if dist != 1 {
+		t.Error("Invalid CompareHist test")
+	}
+
+}
+
 func TestDrawing(t *testing.T) {
 	img := NewMatWithSize(150, 150, MatTypeCV8U)
 	if img.Empty() {
@@ -942,6 +1148,20 @@ func TestPutText(t *testing.T) {
 		t.Error("Error in PutText test")
 	}
 }
+func TestPutTextWithParams(t *testing.T) {
+	img := NewMatWithSize(150, 150, MatTypeCV8U)
+	if img.Empty() {
+		t.Error("Invalid Mat in IMRead")
+	}
+	defer img.Close()
+
+	pt := image.Pt(10, 10)
+	PutTextWithParams(&img, "Testing", pt, FontHersheyPlain, 1.2, color.RGBA{255, 255, 255, 0}, 2, LineAA, false)
+
+	if img.Empty() {
+		t.Error("Error in PutText test")
+	}
+}
 
 func TestResize(t *testing.T) {
 	src := IMRead("images/gocvlogo.jpg", IMReadColor)
@@ -961,6 +1181,22 @@ func TestResize(t *testing.T) {
 	Resize(src, &dst, image.Pt(440, 377), 0, 0, InterpolationCubic)
 	if dst.Cols() != 440 || dst.Rows() != 377 {
 		t.Errorf("Expected dst size of 440x377 got %dx%d", dst.Cols(), dst.Rows())
+	}
+}
+
+func TestGetRectSubPix(t *testing.T) {
+	src := IMRead("images/gocvlogo.jpg", IMReadColor)
+	if src.Empty() {
+		t.Error("Invalid read of Mat in Resize test")
+	}
+	defer src.Close()
+
+	dst := NewMat()
+	defer dst.Close()
+
+	GetRectSubPix(src, image.Point{20, 30}, image.Point{200, 172}, &dst)
+	if dst.Cols() != 20 || dst.Rows() != 30 {
+		t.Errorf("Expected dst size of 20x30 got %dx%d", dst.Cols(), dst.Rows())
 	}
 }
 
@@ -1075,6 +1311,38 @@ func TestWarpAffineWithParamsGocvLogo(t *testing.T) {
 	}
 }
 
+func TestClipLine(t *testing.T) {
+
+	if ok := ClipLine(image.Point{20, 20}, image.Point{5, 5}, image.Point{5, 5}); !ok {
+		t.Error("ClipLine(): is false")
+	}
+}
+
+func TestWatershed(t *testing.T) {
+	src := IMRead("images/gocvlogo.jpg", IMReadUnchanged)
+	if src.Empty() {
+		t.Error("Invalid read of Mat in Watershed test")
+	}
+	defer src.Close()
+
+	gray := NewMat()
+	defer gray.Close()
+	CvtColor(src, &gray, ColorBGRToGray)
+
+	imgThresh := NewMat()
+	defer imgThresh.Close()
+	Threshold(gray, &imgThresh, 5, 50, ThresholdOtsu+ThresholdBinary)
+
+	markers := NewMat()
+	defer markers.Close()
+	_ = ConnectedComponents(imgThresh, &markers)
+
+	Watershed(src, &markers)
+	if markers.Empty() || src.Cols() != markers.Cols() || src.Rows() != markers.Rows() {
+		t.Error("Invalid Watershed test")
+	}
+}
+
 func TestApplyColorMap(t *testing.T) {
 	type args struct {
 		colormapType ColormapTypes
@@ -1147,10 +1415,128 @@ func TestGetPerspectiveTransform(t *testing.T) {
 	defer m.Close()
 
 	if m.Cols() != 3 {
-		t.Errorf("TestWarpPerspective(): unexpected cols = %v, want = %v", m.Cols(), 3)
+		t.Errorf("TestGetPerspectiveTransform(): unexpected cols = %v, want = %v", m.Cols(), 3)
 	}
 	if m.Rows() != 3 {
-		t.Errorf("TestWarpPerspective(): unexpected rows = %v, want = %v", m.Rows(), 3)
+		t.Errorf("TestGetPerspectiveTransform(): unexpected rows = %v, want = %v", m.Rows(), 3)
+	}
+}
+
+func TestGetPerspectiveTransform2f(t *testing.T) {
+	src := []Point2f{
+		{0, 0},
+		{10.5, 5.5},
+		{10.5, 10.5},
+		{5.5, 10.5},
+	}
+	dst := []Point2f{
+		{0, 0},
+		{590.20, 24.12},
+		{100.12, 150.21},
+		{0, 10},
+	}
+
+	m := GetPerspectiveTransform2f(src, dst)
+	defer m.Close()
+
+	if m.Cols() != 3 {
+		t.Errorf("TestGetPerspectiveTransform2f(): unexpected cols = %v, want = %v", m.Cols(), 3)
+	}
+	if m.Rows() != 3 {
+		t.Errorf("TestGetPerspectiveTransform2f(): unexpected rows = %v, want = %v", m.Rows(), 3)
+	}
+}
+
+func TestGetAffineTransform(t *testing.T) {
+	src := []image.Point{
+		image.Pt(0, 0),
+		image.Pt(10, 5),
+		image.Pt(10, 10),
+	}
+	dst := []image.Point{
+		image.Pt(0, 0),
+		image.Pt(10, 0),
+		image.Pt(10, 10),
+	}
+
+	m := GetAffineTransform(src, dst)
+	defer m.Close()
+
+	if m.Cols() != 3 {
+		t.Errorf("TestGetAffineTransform(): unexpected cols = %v, want = %v", m.Cols(), 3)
+	}
+	if m.Rows() != 2 {
+		t.Errorf("TestGetAffineTransform(): unexpected rows = %v, want = %v", m.Rows(), 2)
+	}
+}
+
+func TestGetAffineTransform2f(t *testing.T) {
+	src := []Point2f{
+		{0, 0},
+		{10.5, 5.5},
+		{10.5, 10.5},
+	}
+	dst := []Point2f{
+		{0, 0},
+		{590.20, 24.12},
+		{100.12, 150.21},
+	}
+
+	m := GetAffineTransform2f(src, dst)
+	defer m.Close()
+
+	if m.Cols() != 3 {
+		t.Errorf("TestGetAffineTransform2f(): unexpected cols = %v, want = %v", m.Cols(), 3)
+	}
+	if m.Rows() != 2 {
+		t.Errorf("TestGetAffineTransform2f(): unexpected rows = %v, want = %v", m.Rows(), 2)
+	}
+}
+
+func TestFindHomography(t *testing.T) {
+	src := NewMatWithSize(4, 1, MatTypeCV64FC2)
+	defer src.Close()
+	dst := NewMatWithSize(4, 1, MatTypeCV64FC2)
+	defer dst.Close()
+
+	srcPoints := []Point2f{
+		{193, 932},
+		{191, 378},
+		{1497, 183},
+		{1889, 681},
+	}
+	dstPoints := []Point2f{
+		{51.51206544281359, -0.10425475260813055},
+		{51.51211051314331, -0.10437947532732306},
+		{51.512222354139325, -0.10437679311830816},
+		{51.51214828037607, -0.1042212249954444},
+	}
+
+	for i, point := range srcPoints {
+		src.SetDoubleAt(i, 0, float64(point.X))
+		src.SetDoubleAt(i, 1, float64(point.Y))
+	}
+
+	for i, point := range dstPoints {
+		dst.SetDoubleAt(i, 0, float64(point.X))
+		dst.SetDoubleAt(i, 1, float64(point.Y))
+	}
+
+	mask := NewMat()
+	defer mask.Close()
+
+	m := FindHomography(src, &dst, HomograpyMethodAllPoints, 3, &mask, 2000, 0.995)
+	defer m.Close()
+
+	m2 := GetPerspectiveTransform2f(srcPoints, dstPoints)
+	defer m2.Close()
+
+	for row := 0; row < 3; row++ {
+		for col := 0; col < 3; col++ {
+			if math.Abs(m.GetDoubleAt(row, col)-m2.GetDoubleAt(row, col)) > 0.002 {
+				t.Errorf("expected little difference between GetPerspectiveTransform2f and FindHomography results, got %f for row %d col %d", math.Abs(m.GetDoubleAt(row, col)-m2.GetDoubleAt(row, col)), row, col)
+			}
+		}
 	}
 }
 
@@ -1250,6 +1636,26 @@ func TestFillPoly(t *testing.T) {
 	}
 }
 
+func TestPolylines(t *testing.T) {
+	img := NewMatWithSize(100, 100, MatTypeCV8UC1)
+	defer img.Close()
+
+	white := color.RGBA{255, 255, 255, 0}
+	pts := [][]image.Point{
+		{
+			image.Pt(10, 10),
+			image.Pt(10, 20),
+			image.Pt(20, 20),
+			image.Pt(20, 10),
+		},
+	}
+	Polylines(&img, pts, true, white, 1)
+
+	if v := img.GetUCharAt(10, 10); v != 255 {
+		t.Errorf("TestPolylines(): wrong pixel value = %v, want = %v", v, 255)
+	}
+}
+
 func TestRemap(t *testing.T) {
 	src := IMRead("images/gocvlogo.jpg", IMReadUnchanged)
 	defer src.Close()
@@ -1320,6 +1726,20 @@ func TestLogPolar(t *testing.T) {
 	}
 }
 
+func TestLinearPolar(t *testing.T) {
+	src := IMRead("images/gocvlogo.jpg", IMReadUnchanged)
+	defer src.Close()
+
+	dst := src.Clone()
+	defer dst.Close()
+
+	LinearPolar(src, &dst, image.Pt(22, 22), 1, InterpolationDefault)
+
+	if ok := dst.Empty(); ok {
+		t.Errorf("LinearPolar(): dst is empty")
+	}
+}
+
 func TestFitLine(t *testing.T) {
 	points := []image.Point{image.Pt(125, 24), image.Pt(124, 75), image.Pt(175, 76), image.Pt(176, 25)}
 
@@ -1330,6 +1750,20 @@ func TestFitLine(t *testing.T) {
 
 	if ok := line.Empty(); ok {
 		t.Errorf("FitLine(): line is empty")
+	}
+}
+
+func TestInvertAffineTransform(t *testing.T) {
+	src := NewMatWithSize(2, 3, MatTypeCV32F)
+	defer src.Close()
+
+	dst := NewMatWithSize(2, 3, MatTypeCV32F)
+	defer dst.Close()
+
+	InvertAffineTransform(src, &dst)
+
+	if ok := dst.Empty(); ok {
+		t.Errorf("InvertAffineTransform(): dst is empty")
 	}
 }
 
@@ -1374,5 +1808,49 @@ func TestCLAHEWithParams(t *testing.T) {
 	c.Apply(src, &dst)
 	if dst.Empty() || img.Rows() != dst.Rows() || img.Cols() != dst.Cols() {
 		t.Error("Invalid NewCLAHEWithParams test")
+	}
+}
+
+func TestPhaseCorrelate(t *testing.T) {
+	template := IMRead("images/simple.jpg", IMReadGrayScale)
+	matched := IMRead("images/simple-translated.jpg", IMReadGrayScale)
+	notMatchedOrig := IMRead("images/space_shuttle.jpg", IMReadGrayScale)
+	notMatched := NewMat()
+
+	defer template.Close()
+	defer matched.Close()
+	defer notMatchedOrig.Close()
+	defer notMatched.Close()
+
+	Resize(notMatchedOrig, &notMatched, image.Point{X: matched.Size()[0], Y: matched.Size()[1]}, 0, 0, InterpolationLinear)
+
+	template32FC1 := NewMat()
+	matched32FC1 := NewMat()
+	notMatched32FC1 := NewMat()
+
+	defer template32FC1.Close()
+	defer matched32FC1.Close()
+	defer notMatched32FC1.Close()
+
+	template.ConvertTo(&template32FC1, MatTypeCV32FC1)
+	matched.ConvertTo(&matched32FC1, MatTypeCV32FC1)
+	notMatched.ConvertTo(&notMatched32FC1, MatTypeCV32FC1)
+
+	window := NewMat()
+	defer window.Close()
+
+	shiftTranslated, responseTranslated := PhaseCorrelate(template32FC1, matched32FC1, window)
+	_, responseDifferent := PhaseCorrelate(template32FC1, notMatched32FC1, window)
+
+	if !(shiftTranslated.X < 15) || !(shiftTranslated.Y < 15) {
+		t.Errorf("expected shift to be > 15 pixels, got %v", shiftTranslated)
+	}
+
+	if responseTranslated < 0.85 {
+		t.Errorf("expected response for translated image to be > 0.85, got %f", responseTranslated)
+	}
+
+	if responseDifferent > 0.05 {
+		t.Errorf("expected response for different image to be < 0.05, but got %f", responseDifferent)
 	}
 }

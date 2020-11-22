@@ -61,6 +61,10 @@ void Mat_ConvertTo(Mat m, Mat dst, int type) {
     m->convertTo(*dst, type);
 }
 
+void Mat_ConvertToWithParams(Mat m, Mat dst, int type, float alpha, float beta) {
+    m->convertTo(*dst, type, alpha, beta);
+}
+
 // Mat_ToBytes returns the bytes representation of the underlying data.
 struct ByteArray Mat_ToBytes(Mat m) {
     return toByteArray(reinterpret_cast<const char*>(m->data), m->total() * m->elemSize());
@@ -96,9 +100,22 @@ Mat Mat_Sqrt(Mat m) {
 }
 
 // Mat_Mean calculates the mean value M of array elements, independently for each channel, and return it as Scalar vector
-// TODO pass second paramter with mask
 Scalar Mat_Mean(Mat m) {
     cv::Scalar c = cv::mean(*m);
+    Scalar scal = Scalar();
+    scal.val1 = c.val[0];
+    scal.val2 = c.val[1];
+    scal.val3 = c.val[2];
+    scal.val4 = c.val[3];
+    return scal;
+}
+
+// Mat_MeanWithMask calculates the mean value M of array elements,
+// independently for each channel, and returns it as Scalar vector
+// while applying the mask.
+
+Scalar Mat_MeanWithMask(Mat m, Mat mask){
+    cv::Scalar c = cv::mean(*m, *mask);
     Scalar scal = Scalar();
     scal.val1 = c.val[0];
     scal.val2 = c.val[1];
@@ -310,6 +327,14 @@ void Mat_DivideFloat(Mat m, float val) {
     *m /= val;
 }
 
+Mat Mat_MultiplyMatrix(Mat x, Mat y) {
+    return new cv::Mat((*x) * (*y));
+}
+
+Mat Mat_T(Mat x) {
+    return new cv::Mat(x->t());
+}
+
 void Mat_AbsDiff(Mat src1, Mat src2, Mat dst) {
     cv::absdiff(*src1, *src2, *dst);
 }
@@ -485,6 +510,21 @@ double Mat_Invert(Mat src, Mat dst, int flags) {
     return ret;
 }
 
+double KMeans(Mat data, int k, Mat bestLabels, TermCriteria criteria, int attempts, int flags, Mat centers) {
+    double ret = cv::kmeans(*data, k, *bestLabels, *criteria, attempts, flags, *centers);
+    return ret;
+}
+
+double KMeansPoints(Contour points, int k, Mat bestLabels, TermCriteria criteria, int attempts, int flags, Mat centers) {
+    std::vector<cv::Point2f> pts;
+
+    for (size_t i = 0; i < points.length; i++) {
+        pts.push_back(cv::Point2f(points.points[i].x, points.points[i].y));
+    }
+    double ret = cv::kmeans(pts, k, *bestLabels, *criteria, attempts, flags, *centers);
+    return ret;
+}
+
 void Mat_Log(Mat src, Mat dst) {
     cv::log(*src, *dst);
 }
@@ -530,12 +570,38 @@ void Mat_MinMaxLoc(Mat m, double* minVal, double* maxVal, Point* minLoc, Point* 
     maxLoc->y = cMaxLoc.y;
 }
 
+void Mat_MixChannels(struct Mats src, struct Mats dst, struct IntVector fromTo) {
+    std::vector<cv::Mat> srcMats;
+
+    for (int i = 0; i < src.length; ++i) {
+        srcMats.push_back(*src.mats[i]);
+    }
+
+    std::vector<cv::Mat> dstMats;
+
+    for (int i = 0; i < dst.length; ++i) {
+        dstMats.push_back(*dst.mats[i]);
+    }
+
+    std::vector<int> fromTos;
+
+    for (int i = 0; i < fromTo.length; ++i) {
+        fromTos.push_back(fromTo.val[i]);
+    }
+
+    cv::mixChannels(srcMats, dstMats, fromTos);
+}
+
 void Mat_MulSpectrums(Mat a, Mat b, Mat c, int flags) {
     cv::mulSpectrums(*a, *b, *c, flags);
 }
 
 void Mat_Multiply(Mat src1, Mat src2, Mat dst) {
     cv::multiply(*src1, *src2, *dst);
+}
+
+void Mat_MultiplyWithParams(Mat src1, Mat src2, Mat dst, double scale, int dtype) {
+    cv::multiply(*src1, *src2, *dst, scale, dtype);
 }
 
 void Mat_Normalize(Mat src, Mat dst, double alpha, double beta, int typ) {
@@ -572,6 +638,10 @@ void Mat_Repeat(Mat src, int nY, int nX, Mat dst) {
 
 void Mat_ScaleAdd(Mat src1, double alpha, Mat src2, Mat dst) {
     cv::scaleAdd(*src1, alpha, *src2, *dst);
+}
+
+void Mat_SetIdentity(Mat src, double scalar) {
+    cv::setIdentity(*src, scalar);
 }
 
 void Mat_Sort(Mat src, Mat dst, int flags) {
@@ -652,6 +722,13 @@ void Contours_Close(struct Contours cs) {
     delete[] cs.contours;
 }
 
+void CStrings_Close(struct CStrings cstrs) {
+    for ( int i = 0; i < cstrs.length; i++ ) {
+        delete [] cstrs.strs[i];
+    }
+    delete [] cstrs.strs;
+}
+
 void KeyPoints_Close(struct KeyPoints ks) {
     delete[] ks.keypoints;
 }
@@ -711,4 +788,16 @@ int64 GetCVTickCount() {
 
 double GetTickFrequency() {
     return cv::getTickFrequency();
+}
+
+Mat Mat_rowRange(Mat m,int startrow,int endrow) {
+    return new cv::Mat(m->rowRange(startrow,endrow));
+}
+
+Mat Mat_colRange(Mat m,int startrow,int endrow) {
+    return new cv::Mat(m->colRange(startrow,endrow));
+}
+
+void IntVector_Close(struct IntVector ivec) {
+    delete[] ivec.val;
 }

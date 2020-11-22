@@ -184,3 +184,102 @@ func GroupRectangles(rects []image.Rectangle, groupThreshold int, eps float64) [
 
 	return toRectangles(ret)
 }
+
+// QRCodeDetector groups the object candidate rectangles.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/de/dc3/classcv_1_1QRCodeDetector.html
+//
+type QRCodeDetector struct {
+	p C.QRCodeDetector
+}
+
+// newQRCodeDetector returns a new QRCodeDetector from a C QRCodeDetector
+func newQRCodeDetector(p C.QRCodeDetector) QRCodeDetector {
+	return QRCodeDetector{p: p}
+}
+
+func NewQRCodeDetector() QRCodeDetector {
+	return newQRCodeDetector(C.QRCodeDetector_New())
+}
+
+func (a *QRCodeDetector) Close() error {
+	C.QRCodeDetector_Close(a.p)
+	a.p = nil
+	return nil
+}
+
+// DetectAndDecode Both detects and decodes QR code.
+//
+// Returns true as long as some QR code was detected even in case where the decoding failed
+// For further details, please see:
+// https://docs.opencv.org/master/de/dc3/classcv_1_1QRCodeDetector.html#a7290bd6a5d59b14a37979c3a14fbf394
+//
+func (a *QRCodeDetector) DetectAndDecode(input Mat, points *Mat, straight_qrcode *Mat) string {
+	goResult := C.GoString(C.QRCodeDetector_DetectAndDecode(a.p, input.p, points.p, straight_qrcode.p))
+	return string(goResult)
+}
+
+// Detect detects QR code in image and returns the quadrangle containing the code.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/de/dc3/classcv_1_1QRCodeDetector.html#a64373f7d877d27473f64fe04bb57d22b
+//
+func (a *QRCodeDetector) Detect(input Mat, points *Mat) bool {
+	result := C.QRCodeDetector_Detect(a.p, input.p, points.p)
+	return bool(result)
+}
+
+// Decode decodes QR code in image once it's found by the detect() method. Returns UTF8-encoded output string or empty string if the code cannot be decoded.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/de/dc3/classcv_1_1QRCodeDetector.html#a4172c2eb4825c844fb1b0ae67202d329
+//
+func (a *QRCodeDetector) Decode(input Mat, points Mat, straight_qrcode *Mat) string {
+	goResult := C.GoString(C.QRCodeDetector_DetectAndDecode(a.p, input.p, points.p, straight_qrcode.p))
+	return string(goResult)
+}
+
+// Detects QR codes in image and finds of the quadrangles containing the codes.
+//
+// Each quadrangle would be returned as a row in the `points` Mat and each point is a Vecf.
+// Returns true if QR code was detected
+// For usage please see TestQRCodeDetector
+// For further details, please see:
+// https://docs.opencv.org/master/de/dc3/classcv_1_1QRCodeDetector.html#aaf2b6b2115b8e8fbc9acf3a8f68872b6
+func (a *QRCodeDetector) DetectMulti(input Mat, points *Mat) bool {
+	result := C.QRCodeDetector_DetectMulti(a.p, input.p, points.p)
+	return bool(result)
+}
+
+// Detects QR codes in image and finds of the quadrangles containing the codes and decode the decode the QRCodes to strings.
+//
+// Each quadrangle would be returned as a row in the `points` Mat and each point is a Vecf.
+// Returns true as long as some QR code was detected even in case where the decoding failed
+// For usage please see TestQRCodeDetector
+// For further details, please see:
+//https://docs.opencv.org/master/de/dc3/classcv_1_1QRCodeDetector.html#a188b63ffa17922b2c65d8a0ab7b70775
+func (a *QRCodeDetector) DetectAndDecodeMulti(input Mat, decoded *[]string, points *Mat, qrCodes *[]Mat) bool {
+	cDecoded := C.CStrings{}
+	defer C.CStrings_Close(cDecoded)
+	cQrCodes := C.struct_Mats{}
+	defer C.Mats_Close(cQrCodes)
+	success := C.QRCodeDetector_DetectAndDecodeMulti(a.p, input.p, &cDecoded, points.p, &cQrCodes)
+	if !success {
+		return bool(success)
+	}
+
+	tmpCodes := make([]Mat, cQrCodes.length)
+	for i := C.int(0); i < cQrCodes.length; i++ {
+		tmpCodes[i].p = C.Mats_get(cQrCodes, i)
+	}
+
+	for _, qr := range tmpCodes {
+		*qrCodes = append(*qrCodes, qr)
+	}
+
+	for _, s := range toGoStrings(cDecoded) {
+		*decoded = append(*decoded, s)
+	}
+	return bool(success)
+}

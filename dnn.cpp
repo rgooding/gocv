@@ -33,6 +33,11 @@ Net Net_ReadNetFromTensorflowBytes(struct ByteArray model) {
     return n;
 }
 
+Net Net_ReadNetFromTorch(const char* model) {
+    Net n = new cv::dnn::Net(cv::dnn::readNetFromTorch(model));
+    return n;
+}
+
 void Net_Close(Net net) {
     delete net;
 }
@@ -94,13 +99,51 @@ void Net_GetUnconnectedOutLayers(Net net, IntVector* res) {
     return;
 }
 
+void Net_GetLayerNames(Net net, CStrings* names) {
+    std::vector< cv::String > cstrs(net->getLayerNames());
+    const char **strs = new const char*[cstrs.size()];
+
+    for (size_t i = 0; i < cstrs.size(); ++i) {
+        strs[i] = cstrs[i].c_str();
+    }
+
+    names->length = cstrs.size();
+    names->strs = strs;
+    return;
+}
+
 Mat Net_BlobFromImage(Mat image, double scalefactor, Size size, Scalar mean, bool swapRB,
                       bool crop) {
     cv::Size sz(size.width, size.height);
+    cv::Scalar cm(mean.val1, mean.val2, mean.val3, mean.val4);
+    // use the default target ddepth here.
+    return new cv::Mat(cv::dnn::blobFromImage(*image, scalefactor, sz, cm, swapRB, crop));
+}
+
+void Net_BlobFromImages(struct Mats images, Mat blob, double scalefactor, Size size,
+                       Scalar mean, bool swapRB, bool crop, int ddepth) {
+    std::vector<cv::Mat> imgs;
+    
+    for (int i = 0; i < images.length; ++i) {
+        imgs.push_back(*images.mats[i]);
+    }
+
+    cv::Size sz(size.width, size.height);
     cv::Scalar cm = cv::Scalar(mean.val1, mean.val2, mean.val3, mean.val4);
 
-    // TODO: handle different version signatures of this function v2 vs v3.
-    return new cv::Mat(cv::dnn::blobFromImage(*image, scalefactor, sz, cm, swapRB, crop));
+    // ignore the passed in ddepth, just use default.
+    cv::dnn::blobFromImages(imgs, *blob, scalefactor, sz, cm, swapRB, crop);
+}
+
+void Net_ImagesFromBlob(Mat blob_, struct Mats* images_) {
+    std::vector<cv::Mat> imgs;
+    cv::dnn::imagesFromBlob(*blob_, imgs);
+    images_->mats = new Mat[imgs.size()];
+
+    for (size_t i = 0; i < imgs.size(); ++i) {
+        images_->mats[i] = new cv::Mat(imgs[i]);
+    }
+    images_->length = (int) imgs.size();
 }
 
 Mat Net_GetBlobChannel(Mat blob, int imgidx, int chnidx) {
@@ -140,4 +183,74 @@ const char* Layer_GetName(Layer layer) {
 
 const char* Layer_GetType(Layer layer) {
     return (*layer)->type.c_str();
+}
+
+void NMSBoxes(struct Rects bboxes, FloatVector scores, float score_threshold, float nms_threshold, IntVector* indices) {
+    std::vector<cv::Rect> _bboxes;
+
+    for (int i = 0; i < bboxes.length; ++i) {
+        _bboxes.push_back(cv::Rect(
+            bboxes.rects[i].x,
+            bboxes.rects[i].y,
+            bboxes.rects[i].width,
+            bboxes.rects[i].height
+        ));
+    }
+
+    std::vector<float> _scores;
+
+    float* f;
+    int i;
+    for (i = 0, f = scores.val; i < scores.length; ++f, ++i) {
+        _scores.push_back(*f);
+    }
+
+    std::vector<int> _indices(indices->length);
+
+    cv::dnn::NMSBoxes(_bboxes, _scores, score_threshold, nms_threshold, _indices, 1.f, 0);
+
+    int* ptr = new int[_indices.size()];
+
+    for (size_t i=0; i<_indices.size(); ++i) {
+        ptr[i] = _indices[i];
+    }
+
+    indices->length = _indices.size();
+    indices->val = ptr;
+    return;
+}
+
+void NMSBoxesWithParams(struct Rects bboxes, FloatVector scores, const float score_threshold, const float nms_threshold, IntVector* indices, const float eta, const int top_k) {
+    std::vector<cv::Rect> _bboxes;
+
+    for (int i = 0; i < bboxes.length; ++i) {
+        _bboxes.push_back(cv::Rect(
+            bboxes.rects[i].x,
+            bboxes.rects[i].y,
+            bboxes.rects[i].width,
+            bboxes.rects[i].height
+        ));
+    }
+
+    std::vector<float> _scores;
+
+    float* f;
+    int i;
+    for (i = 0, f = scores.val; i < scores.length; ++f, ++i) {
+        _scores.push_back(*f);
+    }
+
+    std::vector<int> _indices(indices->length);
+
+    cv::dnn::NMSBoxes(_bboxes, _scores, score_threshold, nms_threshold, _indices, eta, top_k);
+
+    int* ptr = new int[_indices.size()];
+
+    for (size_t i=0; i<_indices.size(); ++i) {
+        ptr[i] = _indices[i];
+    }
+
+    indices->length = _indices.size();
+    indices->val = ptr;
+    return;
 }

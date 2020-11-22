@@ -135,6 +135,98 @@ func CalcHist(src []Mat, channels []int, mask Mat, hist *Mat, size []int, ranges
 	C.CalcHist(cMats, chansVector, mask.p, hist.p, sizeVector, rangeVector, C.bool(acc))
 }
 
+// CalcBackProject calculates the back projection of a histogram.
+//
+// For futher details, please see:
+// https://docs.opencv.org/3.4/d6/dc7/group__imgproc__hist.html#ga3a0af640716b456c3d14af8aee12e3ca
+func CalcBackProject(src []Mat, channels []int, hist Mat, backProject *Mat, ranges []float64, uniform bool) {
+	cMatArray := make([]C.Mat, len(src))
+	for i, r := range src {
+		cMatArray[i] = r.p
+	}
+
+	cMats := C.struct_Mats{
+		mats:   (*C.Mat)(&cMatArray[0]),
+		length: C.int(len(src)),
+	}
+
+	chansInts := []C.int{}
+	for _, v := range channels {
+		chansInts = append(chansInts, C.int(v))
+	}
+	chansVector := C.struct_IntVector{}
+	chansVector.val = (*C.int)(&chansInts[0])
+	chansVector.length = (C.int)(len(chansInts))
+
+	rangeFloats := []C.float{}
+	for _, v := range ranges {
+		rangeFloats = append(rangeFloats, C.float(v))
+	}
+	rangeVector := C.struct_FloatVector{}
+	rangeVector.val = (*C.float)(&rangeFloats[0])
+	rangeVector.length = (C.int)(len(rangeFloats))
+
+	C.CalcBackProject(cMats, chansVector, hist.p, backProject.p, rangeVector, C.bool(uniform))
+}
+
+// HistCompMethod is the method for Histogram comparison
+// For more information, see https://docs.opencv.org/master/d6/dc7/group__imgproc__hist.html#ga994f53817d621e2e4228fc646342d386
+type HistCompMethod int
+
+const (
+	// HistCmpCorrel calculates the Correlation
+	HistCmpCorrel HistCompMethod = 0
+
+	// HistCmpChiSqr calculates the Chi-Square
+	HistCmpChiSqr HistCompMethod = 1
+
+	// HistCmpIntersect calculates the Intersection
+	HistCmpIntersect HistCompMethod = 2
+
+	// HistCmpBhattacharya applies the HistCmpBhattacharya by calculating the Bhattacharya distance.
+	HistCmpBhattacharya HistCompMethod = 3
+
+	// HistCmpHellinger applies the HistCmpBhattacharya comparison. It is a synonym to HistCmpBhattacharya.
+	HistCmpHellinger = HistCmpBhattacharya
+
+	// HistCmpChiSqrAlt applies the Alternative Chi-Square (regularly used for texture comparsion).
+	HistCmpChiSqrAlt HistCompMethod = 4
+
+	// HistCmpKlDiv applies the Kullback-Liebler divergence comparison.
+	HistCmpKlDiv HistCompMethod = 5
+)
+
+// CompareHist Compares two histograms.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/d6/dc7/group__imgproc__hist.html#gaf4190090efa5c47cb367cf97a9a519bd
+func CompareHist(hist1 Mat, hist2 Mat, method HistCompMethod) float32 {
+	return float32(C.CompareHist(hist1.p, hist2.p, C.int(method)))
+}
+
+// ClipLine clips the line against the image rectangle.
+// For further details, please see:
+// https://docs.opencv.org/master/d6/d6e/group__imgproc__draw.html#gaf483cb46ad6b049bc35ec67052ef1c2c
+//
+func ClipLine(imgSize image.Point, pt1 image.Point, pt2 image.Point) bool {
+	pSize := C.struct_Size{
+		width:  C.int(imgSize.X),
+		height: C.int(imgSize.Y),
+	}
+
+	rPt1 := C.struct_Point{
+		x: C.int(pt1.X),
+		y: C.int(pt1.Y),
+	}
+
+	rPt2 := C.struct_Point{
+		x: C.int(pt2.X),
+		y: C.int(pt2.Y),
+	}
+
+	return bool(C.ClipLine(pSize, rPt1, rPt2))
+}
+
 // BilateralFilter applies a bilateral filter to an image.
 //
 // Bilateral filtering is described here:
@@ -199,6 +291,41 @@ func Dilate(src Mat, dst *Mat, kernel Mat) {
 	C.Dilate(src.p, dst.p, kernel.p)
 }
 
+// DistanceTransformLabelTypes are the types of the DistanceTransform algorithm flag
+type DistanceTransformLabelTypes int
+
+const (
+	// DistanceLabelCComp assigns the same label to each connected component of zeros in the source image
+	// (as well as all the non-zero pixels closest to the connected component).
+	DistanceLabelCComp DistanceTransformLabelTypes = 0
+
+	// DistanceLabelPixel assigns its own label to each zero pixel (and all the non-zero pixels closest to it).
+	DistanceLabelPixel
+)
+
+// DistanceTransformMasks are the marsk sizes for distance transform
+type DistanceTransformMasks int
+
+const (
+	// DistanceMask3 is a mask of size 3
+	DistanceMask3 DistanceTransformMasks = 0
+
+	// DistanceMask5 is a mask of size 3
+	DistanceMask5
+
+	// DistanceMaskPrecise is not currently supported
+	DistanceMaskPrecise
+)
+
+// DistanceTransform Calculates the distance to the closest zero pixel for each pixel of the source image.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/d7/d1b/group__imgproc__misc.html#ga8a0b7fdfcb7a13dde018988ba3a43042
+//
+func DistanceTransform(src Mat, dst *Mat, labels *Mat, distType DistanceTypes, maskSize DistanceTransformMasks, labelType DistanceTransformLabelTypes) {
+	C.DistanceTransform(src.p, dst.p, labels.p, C.int(distType), C.int(maskSize), C.int(labelType))
+}
+
 // Erode erodes an image by using a specific structuring element.
 //
 // For further details, please see:
@@ -206,6 +333,20 @@ func Dilate(src Mat, dst *Mat, kernel Mat) {
 //
 func Erode(src Mat, dst *Mat, kernel Mat) {
 	C.Erode(src.p, dst.p, kernel.p)
+}
+
+// ErodeWithParams erodes an image by using a specific structuring element.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/d4/d86/group__imgproc__filter.html#gaeb1e0c1033e3f6b891a25d0511362aeb
+//
+func ErodeWithParams(src Mat, dst *Mat, kernel Mat, anchor image.Point, iterations, borderType int) {
+	cAnchor := C.struct_Point{
+		x: C.int(anchor.X),
+		y: C.int(anchor.Y),
+	}
+
+	C.ErodeWithParams(src.p, dst.p, kernel.p, cAnchor, C.int(iterations), C.int(borderType))
 }
 
 // RetrievalMode is the mode of the contour retrieval algorithm.
@@ -218,21 +359,21 @@ const (
 
 	// RetrievalList retrieves all of the contours without establishing
 	// any hierarchical relationships.
-	RetrievalList = 1
+	RetrievalList RetrievalMode = 1
 
 	// RetrievalCComp retrieves all of the contours and organizes them into
 	// a two-level hierarchy. At the top level, there are external boundaries
 	// of the components. At the second level, there are boundaries of the holes.
 	// If there is another contour inside a hole of a connected component, it
 	// is still put at the top level.
-	RetrievalCComp = 2
+	RetrievalCComp RetrievalMode = 2
 
 	// RetrievalTree retrieves all of the contours and reconstructs a full
 	// hierarchy of nested contours.
-	RetrievalTree = 3
+	RetrievalTree RetrievalMode = 3
 
 	// RetrievalFloodfill lacks a description in the original header.
-	RetrievalFloodfill = 4
+	RetrievalFloodfill RetrievalMode = 4
 )
 
 // ContourApproximationMode is the mode of the contour approximation algorithm.
@@ -248,15 +389,15 @@ const (
 	// ChainApproxSimple compresses horizontal, vertical, and diagonal segments
 	// and leaves only their end points.
 	// For example, an up-right rectangular contour is encoded with 4 points.
-	ChainApproxSimple = 2
+	ChainApproxSimple ContourApproximationMode = 2
 
 	// ChainApproxTC89L1 applies one of the flavors of the Teh-Chin chain
 	// approximation algorithms.
-	ChainApproxTC89L1 = 3
+	ChainApproxTC89L1 ContourApproximationMode = 3
 
 	// ChainApproxTC89KCOS applies one of the flavors of the Teh-Chin chain
 	// approximation algorithms.
-	ChainApproxTC89KCOS = 4
+	ChainApproxTC89KCOS ContourApproximationMode = 4
 )
 
 // BoundingRect calculates the up-right bounding rectangle of a point set.
@@ -328,18 +469,11 @@ type RotatedRect struct {
 	Angle        float64
 }
 
-// MinAreaRect finds a rotated rectangle of the minimum area enclosing the input 2D point set.
+// toPoints converts C.Contour to []image.Points
 //
-// For further details, please see:
-// https://docs.opencv.org/3.3.0/d3/dc0/group__imgproc__shape.html#ga3d476a3417130ae5154aea421ca7ead9
-//
-func MinAreaRect(points []image.Point) RotatedRect {
-	cPoints := toCPoints(points)
-	result := C.MinAreaRect(cPoints)
-
-	defer C.Points_Close(result.pts)
-	pArray := result.pts.points
-	pLength := int(result.pts.length)
+func toPoints(points C.Contour) []image.Point {
+	pArray := points.points
+	pLength := int(points.length)
 
 	pHdr := reflect.SliceHeader{
 		Data: uintptr(unsafe.Pointer(pArray)),
@@ -352,15 +486,48 @@ func MinAreaRect(points []image.Point) RotatedRect {
 	for j, pt := range sPoints {
 		points4[j] = image.Pt(int(pt.x), int(pt.y))
 	}
+	return points4
+}
 
+// MinAreaRect finds a rotated rectangle of the minimum area enclosing the input 2D point set.
+//
+// For further details, please see:
+// https://docs.opencv.org/3.3.0/d3/dc0/group__imgproc__shape.html#ga3d476a3417130ae5154aea421ca7ead9
+//
+func MinAreaRect(points []image.Point) RotatedRect {
+	cPoints := toCPoints(points)
+	result := C.MinAreaRect(cPoints)
+
+	defer C.Points_Close(result.pts)
 	return RotatedRect{
-		Contour:      points4,
+		Contour:      toPoints(result.pts),
 		BoundingRect: image.Rect(int(result.boundingRect.x), int(result.boundingRect.y), int(result.boundingRect.x)+int(result.boundingRect.width), int(result.boundingRect.y)+int(result.boundingRect.height)),
 		Center:       image.Pt(int(result.center.x), int(result.center.y)),
 		Width:        int(result.size.width),
 		Height:       int(result.size.height),
 		Angle:        float64(result.angle),
 	}
+}
+
+// FitEllipse Fits an ellipse around a set of 2D points.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/d3/dc0/group__imgproc__shape.html#gaf259efaad93098103d6c27b9e4900ffa
+//
+func FitEllipse(points []image.Point) RotatedRect {
+	cPoints := toCPoints(points)
+	cRect := C.FitEllipse(cPoints)
+	defer C.Points_Close(cRect.pts)
+
+	return RotatedRect{
+		Contour:      toPoints(cRect.pts),
+		BoundingRect: image.Rect(int(cRect.boundingRect.x), int(cRect.boundingRect.y), int(cRect.boundingRect.x)+int(cRect.boundingRect.width), int(cRect.boundingRect.y)+int(cRect.boundingRect.height)),
+		Center:       image.Pt(int(cRect.center.x), int(cRect.center.y)),
+		Width:        int(cRect.size.width),
+		Height:       int(cRect.size.height),
+		Angle:        float64(cRect.angle),
+	}
+
 }
 
 // MinEnclosingCircle finds a circle of the minimum area enclosing the input 2D point set.
@@ -424,10 +591,10 @@ const (
 	CCL_WU ConnectedComponentsAlgorithmType = 0
 
 	// BBDT algorithm for 8-way connectivity, SAUF algorithm for 4-way connectivity.
-	CCL_DEFAULT = 1
+	CCL_DEFAULT ConnectedComponentsAlgorithmType = 1
 
 	// BBDT algorithm for 8-way connectivity, SAUF algorithm for 4-way connectivity
-	CCL_GRANA = 2
+	CCL_GRANA ConnectedComponentsAlgorithmType = 2
 )
 
 // ConnectedComponents computes the connected components labeled image of boolean image.
@@ -454,21 +621,21 @@ type ConnectedComponentsTypes int
 
 const (
 	//The leftmost (x) coordinate which is the inclusive start of the bounding box in the horizontal direction.
-	CC_STAT_LEFT = 0
+	CC_STAT_LEFT ConnectedComponentsTypes = 0
 
 	//The topmost (y) coordinate which is the inclusive start of the bounding box in the vertical direction.
-	CC_STAT_TOP = 1
+	CC_STAT_TOP ConnectedComponentsTypes = 1
 
 	// The horizontal size of the bounding box.
-	CC_STAT_WIDTH = 2
+	CC_STAT_WIDTH ConnectedComponentsTypes = 2
 
 	// The vertical size of the bounding box.
-	CC_STAT_HEIGHT = 3
+	CC_STAT_HEIGHT ConnectedComponentsTypes = 3
 
 	// The total area (in pixels) of the connected component.
-	CC_STAT_AREA = 4
+	CC_STAT_AREA ConnectedComponentsTypes = 4
 
-	CC_STAT_MAX = 5
+	CC_STAT_MAX ConnectedComponentsTypes = 5
 )
 
 // ConnectedComponentsWithStats computes the connected components labeled image of boolean
@@ -501,15 +668,15 @@ const (
 	// TmSqdiff maps to TM_SQDIFF
 	TmSqdiff TemplateMatchMode = 0
 	// TmSqdiffNormed maps to TM_SQDIFF_NORMED
-	TmSqdiffNormed = 1
+	TmSqdiffNormed TemplateMatchMode = 1
 	// TmCcorr maps to TM_CCORR
-	TmCcorr = 2
+	TmCcorr TemplateMatchMode = 2
 	// TmCcorrNormed maps to TM_CCORR_NORMED
-	TmCcorrNormed = 3
+	TmCcorrNormed TemplateMatchMode = 3
 	// TmCcoeff maps to TM_CCOEFF
-	TmCcoeff = 4
+	TmCcoeff TemplateMatchMode = 4
 	// TmCcoeffNormed maps to TM_CCOEFF_NORMED
-	TmCcoeffNormed = 5
+	TmCcoeffNormed TemplateMatchMode = 5
 )
 
 // MatchTemplate compares a template against overlapped image regions.
@@ -605,6 +772,19 @@ func MorphologyEx(src Mat, dst *Mat, op MorphType, kernel Mat) {
 	C.MorphologyEx(src.p, dst.p, C.int(op), kernel.p)
 }
 
+// MorphologyExWithParams performs advanced morphological transformations.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/d4/d86/group__imgproc__filter.html#ga67493776e3ad1a3df63883829375201f
+//
+func MorphologyExWithParams(src Mat, dst *Mat, op MorphType, kernel Mat, iterations int, borderType BorderType) {
+	pt := C.struct_Point{
+		x: C.int(-1),
+		y: C.int(-1),
+	}
+	C.MorphologyExWithParams(src.p, dst.p, C.int(op), kernel.p, pt, C.int(iterations), C.int(borderType))
+}
+
 // MorphShape is the shape of the structuring element used for Morphing operations.
 type MorphShape int
 
@@ -613,10 +793,10 @@ const (
 	MorphRect MorphShape = 0
 
 	// MorphCross is the cross morph shape.
-	MorphCross = 1
+	MorphCross MorphShape = 1
 
 	// MorphEllipse is the ellipse morph shape.
-	MorphEllipse = 2
+	MorphEllipse MorphShape = 2
 )
 
 // GetStructuringElement returns a structuring element of the specified size
@@ -642,25 +822,25 @@ const (
 	MorphErode MorphType = 0
 
 	// MorphDilate operation
-	MorphDilate = 1
+	MorphDilate MorphType = 1
 
 	// MorphOpen operation
-	MorphOpen = 2
+	MorphOpen MorphType = 2
 
 	// MorphClose operation
-	MorphClose = 3
+	MorphClose MorphType = 3
 
 	// MorphGradient operation
-	MorphGradient = 4
+	MorphGradient MorphType = 4
 
 	// MorphTophat operation
-	MorphTophat = 5
+	MorphTophat MorphType = 5
 
 	// MorphBlackhat operation
-	MorphBlackhat = 6
+	MorphBlackhat MorphType = 6
 
 	// MorphHitmiss operation
-	MorphHitmiss = 7
+	MorphHitmiss MorphType = 7
 )
 
 // BorderType type of border.
@@ -671,25 +851,25 @@ const (
 	BorderConstant BorderType = 0
 
 	// BorderReplicate border type
-	BorderReplicate = 1
+	BorderReplicate BorderType = 1
 
 	// BorderReflect border type
-	BorderReflect = 2
+	BorderReflect BorderType = 2
 
 	// BorderWrap border type
-	BorderWrap = 3
+	BorderWrap BorderType = 3
 
 	// BorderReflect101 border type
-	BorderReflect101 = 4
+	BorderReflect101 BorderType = 4
 
 	// BorderTransparent border type
-	BorderTransparent = 5
+	BorderTransparent BorderType = 5
 
 	// BorderDefault border type
 	BorderDefault = BorderReflect101
 
 	// BorderIsolated border type
-	BorderIsolated = 16
+	BorderIsolated BorderType = 16
 )
 
 // GaussianBlur blurs an image Mat using a Gaussian filter.
@@ -709,12 +889,28 @@ func GaussianBlur(src Mat, dst *Mat, ksize image.Point, sigmaX float64,
 	C.GaussianBlur(src.p, dst.p, pSize, C.double(sigmaX), C.double(sigmaY), C.int(borderType))
 }
 
+// GetGaussianKernel returns Gaussian filter coefficients.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/d4/d86/group__imgproc__filter.html#gac05a120c1ae92a6060dd0db190a61afa
+func GetGaussianKernel(ksize int, sigma float64) Mat {
+	return newMat(C.GetGaussianKernel(C.int(ksize), C.double(sigma), C.int(MatTypeCV64F)))
+}
+
+// GetGaussianKernelWithParams returns Gaussian filter coefficients.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/d4/d86/group__imgproc__filter.html#gac05a120c1ae92a6060dd0db190a61afa
+func GetGaussianKernelWithParams(ksize int, sigma float64, ktype MatType) Mat {
+	return newMat(C.GetGaussianKernel(C.int(ksize), C.double(sigma), C.int(ktype)))
+}
+
 // Sobel calculates the first, second, third, or mixed image derivatives using an extended Sobel operator
 //
 // For further details, please see:
 // https://docs.opencv.org/master/d4/d86/group__imgproc__filter.html#gacea54f142e81b6758cb6f375ce782c8d
 //
-func Sobel(src Mat, dst *Mat, ddepth, dx, dy, ksize int, scale, delta float64, borderType BorderType) {
+func Sobel(src Mat, dst *Mat, ddepth MatType, dx, dy, ksize int, scale, delta float64, borderType BorderType) {
 	C.Sobel(src.p, dst.p, C.int(ddepth), C.int(dx), C.int(dy), C.int(ksize), C.double(scale), C.double(delta), C.int(borderType))
 }
 
@@ -723,7 +919,7 @@ func Sobel(src Mat, dst *Mat, ddepth, dx, dy, ksize int, scale, delta float64, b
 // For further details, please see:
 // https://docs.opencv.org/master/d4/d86/group__imgproc__filter.html#ga405d03b20c782b65a4daf54d233239a2
 //
-func SpatialGradient(src Mat, dx, dy *Mat, ksize int, borderType BorderType) {
+func SpatialGradient(src Mat, dx, dy *Mat, ksize MatType, borderType BorderType) {
 	C.SpatialGradient(src.p, dx.p, dy.p, C.int(ksize), C.int(borderType))
 }
 
@@ -732,7 +928,7 @@ func SpatialGradient(src Mat, dx, dy *Mat, ksize int, borderType BorderType) {
 // For further details, please see:
 // https://docs.opencv.org/master/d4/d86/group__imgproc__filter.html#gad78703e4c8fe703d479c1860d76429e6
 //
-func Laplacian(src Mat, dst *Mat, dDepth int, size int, scale float64,
+func Laplacian(src Mat, dst *Mat, dDepth MatType, size int, scale float64,
 	delta float64, borderType BorderType) {
 	C.Laplacian(src.p, dst.p, C.int(dDepth), C.int(size), C.double(scale), C.double(delta), C.int(borderType))
 }
@@ -742,7 +938,7 @@ func Laplacian(src Mat, dst *Mat, dDepth int, size int, scale float64,
 // For further details, please see:
 // https://docs.opencv.org/master/d4/d86/group__imgproc__filter.html#gaa13106761eedf14798f37aa2d60404c9
 //
-func Scharr(src Mat, dst *Mat, dDepth int, dx int, dy int, scale float64,
+func Scharr(src Mat, dst *Mat, dDepth MatType, dx int, dy int, scale float64,
 	delta float64, borderType BorderType) {
 	C.Scharr(src.p, dst.p, C.int(dDepth), C.int(dx), C.int(dy), C.double(scale), C.double(delta), C.int(borderType))
 }
@@ -802,6 +998,40 @@ func GoodFeaturesToTrack(img Mat, corners *Mat, maxCorners int, quality float64,
 	C.GoodFeaturesToTrack(img.p, corners.p, C.int(maxCorners), C.double(quality), C.double(minDist))
 }
 
+// GrabCutMode is the flag for GrabCut algorithm.
+type GrabCutMode int
+
+const (
+	// GCInitWithRect makes the function initialize the state and the mask using the provided rectangle.
+	// After that it runs the itercount iterations of the algorithm.
+	GCInitWithRect GrabCutMode = 0
+	// GCInitWithMask makes the function initialize the state using the provided mask.
+	// GCInitWithMask and GCInitWithRect can be combined.
+	// Then all the pixels outside of the ROI are automatically initialized with GC_BGD.
+	GCInitWithMask GrabCutMode = 1
+	// GCEval means that the algorithm should just resume.
+	GCEval GrabCutMode = 2
+	// GCEvalFreezeModel means that the algorithm should just run a single iteration of the GrabCut algorithm
+	// with the fixed model
+	GCEvalFreezeModel GrabCutMode = 3
+)
+
+// Grabcut runs the GrabCut algorithm.
+// The function implements the GrabCut image segmentation algorithm.
+// For further details, please see:
+// https://docs.opencv.org/master/d7/d1b/group__imgproc__misc.html#ga909c1dda50efcbeaa3ce126be862b37f
+//
+func GrabCut(img Mat, mask *Mat, r image.Rectangle, bgdModel *Mat, fgdModel *Mat, iterCount int, mode GrabCutMode) {
+	cRect := C.struct_Rect{
+		x:      C.int(r.Min.X),
+		y:      C.int(r.Min.Y),
+		width:  C.int(r.Size().X),
+		height: C.int(r.Size().Y),
+	}
+
+	C.GrabCut(img.p, mask.p, cRect, bgdModel.p, fgdModel.p, C.int(iterCount), C.int(mode))
+}
+
 // HoughMode is the type for Hough transform variants.
 type HoughMode int
 
@@ -810,15 +1040,15 @@ const (
 	HoughStandard HoughMode = 0
 	// HoughProbabilistic is the probabilistic Hough transform (more efficient
 	// in case if the picture contains a few long linear segments).
-	HoughProbabilistic = 1
+	HoughProbabilistic HoughMode = 1
 	// HoughMultiScale is the multi-scale variant of the classical Hough
 	// transform.
-	HoughMultiScale = 2
+	HoughMultiScale HoughMode = 2
 	// HoughGradient is basically 21HT, described in: HK Yuen, John Princen,
 	// John Illingworth, and Josef Kittler. Comparative study of hough
 	// transform methods for circle finding. Image and Vision Computing,
 	// 8(1):71–77, 1990.
-	HoughGradient = 3
+	HoughGradient HoughMode = 3
 )
 
 // HoughCircles finds circles in a grayscale image using the Hough transform.
@@ -882,6 +1112,14 @@ func HoughLinesPointSet(points Mat, lines *Mat, linesMax int, threshold int,
 		C.double(minTheta), C.double(maxTheta), C.double(thetaStep))
 }
 
+// Integral calculates one or more integral images for the source image.
+// For further details, please see:
+// https://docs.opencv.org/master/d7/d1b/group__imgproc__misc.html#ga97b87bec26908237e8ba0f6e96d23e28
+//
+func Integral(src Mat, sum *Mat, sqsum *Mat, tilted *Mat) {
+	C.Integral(src.p, sum.p, sqsum.p, tilted.p)
+}
+
 // ThresholdType type of threshold operation.
 type ThresholdType int
 
@@ -890,25 +1128,25 @@ const (
 	ThresholdBinary ThresholdType = 0
 
 	// ThresholdBinaryInv threshold type
-	ThresholdBinaryInv = 1
+	ThresholdBinaryInv ThresholdType = 1
 
 	// ThresholdTrunc threshold type
-	ThresholdTrunc = 2
+	ThresholdTrunc ThresholdType = 2
 
 	// ThresholdToZero threshold type
-	ThresholdToZero = 3
+	ThresholdToZero ThresholdType = 3
 
 	// ThresholdToZeroInv threshold type
-	ThresholdToZeroInv = 4
+	ThresholdToZeroInv ThresholdType = 4
 
 	// ThresholdMask threshold type
-	ThresholdMask = 7
+	ThresholdMask ThresholdType = 7
 
 	// ThresholdOtsu threshold type
-	ThresholdOtsu = 8
+	ThresholdOtsu ThresholdType = 8
 
 	// ThresholdTriangle threshold type
-	ThresholdTriangle = 16
+	ThresholdTriangle ThresholdType = 16
 )
 
 // Threshold applies a fixed-level threshold to each array element.
@@ -916,8 +1154,8 @@ const (
 // For further details, please see:
 // https://docs.opencv.org/3.3.0/d7/d1b/group__imgproc__misc.html#gae8a4a146d1ca78c626a53577199e9c57
 //
-func Threshold(src Mat, dst *Mat, thresh float32, maxvalue float32, typ ThresholdType) {
-	C.Threshold(src.p, dst.p, C.double(thresh), C.double(maxvalue), C.int(typ))
+func Threshold(src Mat, dst *Mat, thresh float32, maxvalue float32, typ ThresholdType) (threshold float32) {
+	return float32(C.Threshold(src.p, dst.p, C.double(thresh), C.double(maxvalue), C.int(typ)))
 }
 
 // AdaptiveThresholdType type of adaptive threshold operation.
@@ -928,7 +1166,7 @@ const (
 	AdaptiveThresholdMean AdaptiveThresholdType = 0
 
 	// AdaptiveThresholdGaussian threshold type
-	AdaptiveThresholdGaussian = 1
+	AdaptiveThresholdGaussian AdaptiveThresholdType = 1
 )
 
 // AdaptiveThreshold applies a fixed-level threshold to each array element.
@@ -1104,6 +1342,47 @@ func FillPoly(img *Mat, pts [][]image.Point, c color.RGBA) {
 	C.FillPoly(img.p, cPoints, sColor)
 }
 
+// Polylines draws several polygonal curves.
+//
+// For more information, see:
+// https://docs.opencv.org/master/d6/d6e/group__imgproc__draw.html#ga1ea127ffbbb7e0bfc4fd6fd2eb64263c
+func Polylines(img *Mat, pts [][]image.Point, isClosed bool, c color.RGBA, thickness int) {
+	points := make([]C.struct_Points, len(pts))
+
+	for i, pt := range pts {
+		p := (*C.struct_Point)(C.malloc(C.size_t(C.sizeof_struct_Point * len(pt))))
+		defer C.free(unsafe.Pointer(p))
+
+		pa := getPoints(p, len(pt))
+
+		for j, point := range pt {
+			pa[j] = C.struct_Point{
+				x: C.int(point.X),
+				y: C.int(point.Y),
+			}
+		}
+
+		points[i] = C.struct_Points{
+			points: (*C.Point)(p),
+			length: C.int(len(pt)),
+		}
+	}
+
+	cPoints := C.struct_Contours{
+		contours: (*C.struct_Points)(&points[0]),
+		length:   C.int(len(pts)),
+	}
+
+	sColor := C.struct_Scalar{
+		val1: C.double(c.B),
+		val2: C.double(c.G),
+		val3: C.double(c.R),
+		val4: C.double(c.A),
+	}
+
+	C.Polylines(img.p, cPoints, C.bool(isClosed), sColor, C.int(thickness))
+}
+
 // HersheyFont are the font libraries included in OpenCV.
 // Only a subset of the available Hershey fonts are supported by OpenCV.
 //
@@ -1116,23 +1395,41 @@ const (
 	// FontHersheySimplex is normal size sans-serif font.
 	FontHersheySimplex HersheyFont = 0
 	// FontHersheyPlain issmall size sans-serif font.
-	FontHersheyPlain = 1
+	FontHersheyPlain HersheyFont = 1
 	// FontHersheyDuplex normal size sans-serif font
 	// (more complex than FontHersheySIMPLEX).
-	FontHersheyDuplex = 2
+	FontHersheyDuplex HersheyFont = 2
 	// FontHersheyComplex i a normal size serif font.
-	FontHersheyComplex = 3
+	FontHersheyComplex HersheyFont = 3
 	// FontHersheyTriplex is a normal size serif font
 	// (more complex than FontHersheyCOMPLEX).
-	FontHersheyTriplex = 4
+	FontHersheyTriplex HersheyFont = 4
 	// FontHersheyComplexSmall is a smaller version of FontHersheyCOMPLEX.
-	FontHersheyComplexSmall = 5
+	FontHersheyComplexSmall HersheyFont = 5
 	// FontHersheyScriptSimplex is a hand-writing style font.
-	FontHersheyScriptSimplex = 6
+	FontHersheyScriptSimplex HersheyFont = 6
 	// FontHersheyScriptComplex is a more complex variant of FontHersheyScriptSimplex.
-	FontHersheyScriptComplex = 7
+	FontHersheyScriptComplex HersheyFont = 7
 	// FontItalic is the flag for italic font.
-	FontItalic = 16
+	FontItalic HersheyFont = 16
+)
+
+// LineType are the line libraries included in OpenCV.
+//
+// For more information, see:
+// https://vovkos.github.io/doxyrest-showcase/opencv/sphinx_rtd_theme/enum_cv_LineTypes.html
+//
+type LineType int
+
+const (
+	// Filled line
+	Filled LineType = -1
+	// Line4 4-connected line
+	Line4 LineType = 4
+	// Line8 8-connected line
+	Line8 LineType = 8
+	// LineAA antialiased line
+	LineAA LineType = 16
 )
 
 // GetTextSize calculates the width and height of a text string.
@@ -1148,6 +1445,22 @@ func GetTextSize(text string, fontFace HersheyFont, fontScale float64, thickness
 
 	sz := C.GetTextSize(cText, C.int(fontFace), C.double(fontScale), C.int(thickness))
 	return image.Pt(int(sz.width), int(sz.height))
+}
+
+// GetTextSizeWithBaseline calculates the width and height of a text string including the basline of the text.
+// It returns an image.Point with the size required to draw text using
+// a specific font face, scale, and thickness as well as its baseline.
+//
+// For further details, please see:
+// http://docs.opencv.org/master/d6/d6e/group__imgproc__draw.html#ga3d2abfcb995fd2db908c8288199dba82
+//
+func GetTextSizeWithBaseline(text string, fontFace HersheyFont, fontScale float64, thickness int) (image.Point, int) {
+	cText := C.CString(text)
+	defer C.free(unsafe.Pointer(cText))
+	cBaseline := C.int(0)
+
+	sz := C.GetTextSizeWithBaseline(cText, C.int(fontFace), C.double(fontScale), C.int(thickness), &cBaseline)
+	return image.Pt(int(sz.width), int(sz.height)), int(cBaseline)
 }
 
 // PutText draws a text string.
@@ -1178,6 +1491,34 @@ func PutText(img *Mat, text string, org image.Point, fontFace HersheyFont, fontS
 	return
 }
 
+// PutTextWithParams draws a text string.
+// It renders the specified text string into the img Mat at the location
+// passed in the "org" param, using the desired font face, font scale,
+// color, and line thinkness.
+//
+// For further details, please see:
+// http://docs.opencv.org/master/d6/d6e/group__imgproc__draw.html#ga5126f47f883d730f633d74f07456c576
+//
+func PutTextWithParams(img *Mat, text string, org image.Point, fontFace HersheyFont, fontScale float64, c color.RGBA, thickness int, lineType LineType, bottomLeftOrigin bool) {
+	cText := C.CString(text)
+	defer C.free(unsafe.Pointer(cText))
+
+	pOrg := C.struct_Point{
+		x: C.int(org.X),
+		y: C.int(org.Y),
+	}
+
+	sColor := C.struct_Scalar{
+		val1: C.double(c.B),
+		val2: C.double(c.G),
+		val3: C.double(c.R),
+		val4: C.double(c.A),
+	}
+
+	C.PutTextWithParams(img.p, cText, pOrg, C.int(fontFace), C.double(fontScale), sColor, C.int(thickness), C.int(lineType), C.bool(bottomLeftOrigin))
+	return
+}
+
 // InterpolationFlags are bit flags that control the interpolation algorithm
 // that is used.
 type InterpolationFlags int
@@ -1187,23 +1528,23 @@ const (
 	InterpolationNearestNeighbor InterpolationFlags = 0
 
 	// InterpolationLinear is bilinear interpolation.
-	InterpolationLinear = 1
+	InterpolationLinear InterpolationFlags = 1
 
 	// InterpolationCubic is bicube interpolation.
-	InterpolationCubic = 2
+	InterpolationCubic InterpolationFlags = 2
 
 	// InterpolationArea uses pixel area relation. It is preferred for image
 	// decimation as it gives moire-free results.
-	InterpolationArea = 3
+	InterpolationArea InterpolationFlags = 3
 
 	// InterpolationLanczos4 is Lanczos interpolation over 8x8 neighborhood.
-	InterpolationLanczos4 = 4
+	InterpolationLanczos4 InterpolationFlags = 4
 
 	// InterpolationDefault is an alias for InterpolationLinear.
 	InterpolationDefault = InterpolationLinear
 
 	// InterpolationMax indicates use maximum interpolation.
-	InterpolationMax = 7
+	InterpolationMax InterpolationFlags = 7
 )
 
 // Resize resizes an image.
@@ -1223,6 +1564,22 @@ func Resize(src Mat, dst *Mat, sz image.Point, fx, fy float64, interp Interpolat
 
 	C.Resize(src.p, dst.p, pSize, C.double(fx), C.double(fy), C.int(interp))
 	return
+}
+
+// GetRectSubPix retrieves a pixel rectangle from an image with sub-pixel accuracy.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/da/d54/group__imgproc__transform.html#ga77576d06075c1a4b6ba1a608850cd614
+func GetRectSubPix(src Mat, patchSize image.Point, center image.Point, dst *Mat) {
+	sz := C.struct_Size{
+		width:  C.int(patchSize.X),
+		height: C.int(patchSize.Y),
+	}
+	pt := C.struct_Point{
+		x: C.int(center.X),
+		y: C.int(center.Y),
+	}
+	C.GetRectSubPix(src.p, sz, pt, dst.p)
 }
 
 // GetRotationMatrix2D calculates an affine matrix of 2D rotation.
@@ -1281,6 +1638,14 @@ func WarpPerspective(src Mat, dst *Mat, m Mat, sz image.Point) {
 	C.WarpPerspective(src.p, dst.p, m.p, pSize)
 }
 
+// Watershed performs a marker-based image segmentation using the watershed algorithm.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/d7/d1b/group__imgproc__misc.html#ga3267243e4d3f95165d55a618c65ac6e1
+func Watershed(image Mat, markers *Mat) {
+	C.Watershed(image.p, markers.p)
+}
+
 // ColormapTypes are the 12 GNU Octave/MATLAB equivalent colormaps.
 //
 // For further details, please see:
@@ -1293,18 +1658,18 @@ type ColormapTypes int
 // https://docs.opencv.org/master/d3/d50/group__imgproc__colormap.html#ga9a805d8262bcbe273f16be9ea2055a65
 const (
 	ColormapAutumn  ColormapTypes = 0
-	ColormapBone                  = 1
-	ColormapJet                   = 2
-	ColormapWinter                = 3
-	ColormapRainbow               = 4
-	ColormapOcean                 = 5
-	ColormapSummer                = 6
-	ColormapSpring                = 7
-	ColormapCool                  = 8
-	ColormapHsv                   = 9
-	ColormapPink                  = 10
-	ColormapHot                   = 11
-	ColormapParula                = 12
+	ColormapBone    ColormapTypes = 1
+	ColormapJet     ColormapTypes = 2
+	ColormapWinter  ColormapTypes = 3
+	ColormapRainbow ColormapTypes = 4
+	ColormapOcean   ColormapTypes = 5
+	ColormapSummer  ColormapTypes = 6
+	ColormapSpring  ColormapTypes = 7
+	ColormapCool    ColormapTypes = 8
+	ColormapHsv     ColormapTypes = 9
+	ColormapPink    ColormapTypes = 10
+	ColormapHot     ColormapTypes = 11
+	ColormapParula  ColormapTypes = 12
 )
 
 // ApplyColorMap applies a GNU Octave/MATLAB equivalent colormap on a given image.
@@ -1324,7 +1689,7 @@ func ApplyCustomColorMap(src Mat, dst *Mat, customColormap Mat) {
 }
 
 // GetPerspectiveTransform returns 3x3 perspective transformation for the
-// corresponding 4 point pairs.
+// corresponding 4 point pairs as image.Point.
 //
 // For further details, please see:
 // https://docs.opencv.org/master/da/d54/group__imgproc__transform.html#ga8c1ae0e3589a9d77fffc962c49b22043
@@ -1334,16 +1699,66 @@ func GetPerspectiveTransform(src, dst []image.Point) Mat {
 	return newMat(C.GetPerspectiveTransform(srcPoints, dstPoints))
 }
 
+// GetPerspectiveTransform2f returns 3x3 perspective transformation for the
+// corresponding 4 point pairs as gocv.Point2f.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/da/d54/group__imgproc__transform.html#ga8c1ae0e3589a9d77fffc962c49b22043
+func GetPerspectiveTransform2f(src, dst []Point2f) Mat {
+	srcPoints := toCPoints2f(src)
+	dstPoints := toCPoints2f(dst)
+	return newMat(C.GetPerspectiveTransform2f(srcPoints, dstPoints))
+}
+
+// GetAffineTransform returns a 2x3 affine transformation matrix for the
+// corresponding 3 point pairs as image.Point.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/da/d54/group__imgproc__transform.html#ga8f6d378f9f8eebb5cb55cd3ae295a999
+func GetAffineTransform(src, dst []image.Point) Mat {
+	srcPoints := toCPoints(src)
+	dstPoints := toCPoints(dst)
+	return newMat(C.GetAffineTransform(srcPoints, dstPoints))
+}
+
+// GetAffineTransform2f returns a 2x3 affine transformation matrix for the
+// corresponding 3 point pairs as gocv.Point2f.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/da/d54/group__imgproc__transform.html#ga8f6d378f9f8eebb5cb55cd3ae295a999
+func GetAffineTransform2f(src, dst []Point2f) Mat {
+	srcPoints := toCPoints2f(src)
+	dstPoints := toCPoints2f(dst)
+	return newMat(C.GetAffineTransform2f(srcPoints, dstPoints))
+}
+
+type HomographyMethod int
+
+const (
+	HomograpyMethodAllPoints HomographyMethod = 0
+	HomograpyMethodLMEDS     HomographyMethod = 4
+	HomograpyMethodRANSAC    HomographyMethod = 8
+)
+
+// FindHomography finds an optimal homography matrix using 4 or more point pairs (as opposed to GetPerspectiveTransform, which uses exactly 4)
+//
+// For further details, please see:
+// https://docs.opencv.org/master/d9/d0c/group__calib3d.html#ga4abc2ece9fab9398f2e560d53c8c9780
+//
+func FindHomography(srcPoints Mat, dstPoints *Mat, method HomographyMethod, ransacReprojThreshold float64, mask *Mat, maxIters int, confidence float64) Mat {
+	return newMat(C.FindHomography(srcPoints.Ptr(), dstPoints.Ptr(), C.int(method), C.double(ransacReprojThreshold), mask.Ptr(), C.int(maxIters), C.double(confidence)))
+}
+
 // DrawContours draws contours outlines or filled contours.
 //
 // For further details, please see:
-// https://docs.opencv.org/3.3.1/d6/d6e/group__imgproc__draw.html#ga746c0625f1781f1ffc9056259103edbc
+// https://docs.opencv.org/master/d6/d6e/group__imgproc__draw.html#ga746c0625f1781f1ffc9056259103edbc
+//
 func DrawContours(img *Mat, contours [][]image.Point, contourIdx int, c color.RGBA, thickness int) {
 	cntrs := make([]C.struct_Points, len(contours))
 
 	for i, contour := range contours {
 		p := (*C.struct_Point)(C.malloc(C.size_t(C.sizeof_struct_Point * len(contour))))
-		defer C.free(unsafe.Pointer(p))
 
 		pa := getPoints(p, len(contour))
 
@@ -1373,6 +1788,12 @@ func DrawContours(img *Mat, contours [][]image.Point, contourIdx int, c color.RG
 	}
 
 	C.DrawContours(img.p, cContours, C.int(contourIdx), sColor, C.int(thickness))
+
+	// now free the contour points
+	for i := 0; i < len(contours); i++ {
+		C.free(unsafe.Pointer(cntrs[i].points))
+
+	}
 }
 
 // Remap applies a generic geometrical transformation to an image.
@@ -1393,7 +1814,7 @@ func Remap(src Mat, dst, map1, map2 *Mat, interpolation InterpolationFlags, bord
 //
 // For further details, please see:
 // https://docs.opencv.org/master/d4/d86/group__imgproc__filter.html#ga27c049795ce870216ddfb366086b5a04
-func Filter2D(src Mat, dst *Mat, ddepth int, kernel Mat, anchor image.Point, delta float64, borderType BorderType) {
+func Filter2D(src Mat, dst *Mat, ddepth MatType, kernel Mat, anchor image.Point, delta float64, borderType BorderType) {
 	anchorP := C.struct_Point{
 		x: C.int(anchor.X),
 		y: C.int(anchor.Y),
@@ -1405,7 +1826,7 @@ func Filter2D(src Mat, dst *Mat, ddepth int, kernel Mat, anchor image.Point, del
 //
 // For further details, please see:
 // https://docs.opencv.org/master/d4/d86/group__imgproc__filter.html#ga910e29ff7d7b105057d1625a4bf6318d
-func SepFilter2D(src Mat, dst *Mat, ddepth int, kernelX, kernelY Mat, anchor image.Point, delta float64, borderType BorderType) {
+func SepFilter2D(src Mat, dst *Mat, ddepth MatType, kernelX, kernelY Mat, anchor image.Point, delta float64, borderType BorderType) {
 	anchorP := C.struct_Point{
 		x: C.int(anchor.X),
 		y: C.int(anchor.Y),
@@ -1425,6 +1846,18 @@ func LogPolar(src Mat, dst *Mat, center image.Point, m float64, flags Interpolat
 	C.LogPolar(src.p, dst.p, centerP, C.double(m), C.int(flags))
 }
 
+// LinearPolar remaps an image to polar coordinates space.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/da/d54/group__imgproc__transform.html#gaa38a6884ac8b6e0b9bed47939b5362f3
+func LinearPolar(src Mat, dst *Mat, center image.Point, maxRadius float64, flags InterpolationFlags) {
+	centerP := C.struct_Point{
+		x: C.int(center.X),
+		y: C.int(center.Y),
+	}
+	C.LinearPolar(src.p, dst.p, centerP, C.double(maxRadius), C.int(flags))
+}
+
 // DistanceTypes types for Distance Transform and M-estimatorss
 //
 // For further details, please see:
@@ -1433,13 +1866,13 @@ type DistanceTypes int
 
 const (
 	DistUser   DistanceTypes = 0
-	DistL1                   = 1
-	DistL2                   = 2
-	DistC                    = 3
-	DistL12                  = 4
-	DistFair                 = 5
-	DistWelsch               = 6
-	DistHuber                = 7
+	DistL1     DistanceTypes = 1
+	DistL2     DistanceTypes = 2
+	DistC      DistanceTypes = 3
+	DistL12    DistanceTypes = 4
+	DistFair   DistanceTypes = 5
+	DistWelsch DistanceTypes = 6
+	DistHuber  DistanceTypes = 7
 )
 
 // FitLine fits a line to a 2D or 3D point set.
@@ -1493,4 +1926,23 @@ func (c *CLAHE) Close() error {
 //
 func (c *CLAHE) Apply(src Mat, dst *Mat) {
 	C.CLAHE_Apply((C.CLAHE)(c.p), src.p, dst.p)
+}
+
+func InvertAffineTransform(src Mat, dst *Mat) {
+	C.InvertAffineTransform(src.p, dst.p)
+}
+
+// Apply phaseCorrelate.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/d7/df3/group__imgproc__motion.html#ga552420a2ace9ef3fb053cd630fdb4952
+//
+func PhaseCorrelate(src1, src2, window Mat) (phaseShift Point2f, response float64) {
+	var responseDouble C.double
+	result := C.PhaseCorrelate(src1.p, src2.p, window.p, &responseDouble)
+
+	return Point2f{
+		X: float32(result.x),
+		Y: float32(result.y),
+	}, float64(responseDouble)
 }

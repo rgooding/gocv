@@ -6,7 +6,7 @@ GoCV support for the Intel OpenVINO Inference Engine will be able to be found he
 
 ## How It Works
 
-Support in GoCV for the Intel OpenVINO Inference Engine requires version R2+ in order to work.
+Support in GoCV for the Intel OpenVINO Inference Engine requires version 2019 R3+ in order to work.
 
 ## How to use
 
@@ -18,7 +18,11 @@ if net.Empty() {
     fmt.Println("Error reading network model")
     return
 }
-
+// GPU usage
 net.SetPreferableBackend(gocv.NetBackendType(gocv.NetBackendOpenVINO))
-net.SetPreferableTarget(gocv.NetTargetType(gocv.NetBackendFP16))
+net.SetPreferableTarget(gocv.NetTargetType(gocv.NetTargetFP16))
+
+// Intel Neural Compute Stick 2 usage
+net.SetPreferableBackend(gocv.NetBackendType(gocv.NetBackendOpenVINO))
+net.SetPreferableTarget(gocv.NetTargetType(gocv.NetTargetVPU))
 ```

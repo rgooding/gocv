@@ -35,25 +35,25 @@ const (
 	MatTypeCV8U MatType = 0
 
 	// MatTypeCV8S is a Mat of 8-bit signed int
-	MatTypeCV8S = 1
+	MatTypeCV8S MatType = 1
 
 	// MatTypeCV16U is a Mat of 16-bit unsigned int
-	MatTypeCV16U = 2
+	MatTypeCV16U MatType = 2
 
 	// MatTypeCV16S is a Mat of 16-bit signed int
-	MatTypeCV16S = 3
+	MatTypeCV16S MatType = 3
 
 	// MatTypeCV16SC2 is a Mat of 16-bit signed int with 2 channels
 	MatTypeCV16SC2 = MatTypeCV16S + MatChannels2
 
 	// MatTypeCV32S is a Mat of 32-bit signed int
-	MatTypeCV32S = 4
+	MatTypeCV32S MatType = 4
 
 	// MatTypeCV32F is a Mat of 32-bit float
-	MatTypeCV32F = 5
+	MatTypeCV32F MatType = 5
 
 	// MatTypeCV64F is a Mat of 64-bit float
-	MatTypeCV64F = 6
+	MatTypeCV64F MatType = 6
 
 	// MatTypeCV8UC1 is a Mat of 8-bit unsigned int with a single channel
 	MatTypeCV8UC1 = MatTypeCV8U + MatChannels1
@@ -66,6 +66,75 @@ const (
 
 	// MatTypeCV8UC4 is a Mat of 8-bit unsigned int with 4 channels
 	MatTypeCV8UC4 = MatTypeCV8U + MatChannels4
+
+	// MatTypeCV8SC1 is a Mat of 8-bit signed int with a single channel
+	MatTypeCV8SC1 = MatTypeCV8S + MatChannels1
+
+	// MatTypeCV8SC2 is a Mat of 8-bit signed int with 2 channels
+	MatTypeCV8SC2 = MatTypeCV8S + MatChannels2
+
+	// MatTypeCV8SC3 is a Mat of 8-bit signed int with 3 channels
+	MatTypeCV8SC3 = MatTypeCV8S + MatChannels3
+
+	// MatTypeCV8SC4 is a Mat of 8-bit signed int with 4 channels
+	MatTypeCV8SC4 = MatTypeCV8S + MatChannels4
+
+	// MatTypeCV16UC1 is a Mat of 16-bit unsigned int with a single channel
+	MatTypeCV16UC1 = MatTypeCV16U + MatChannels1
+
+	// MatTypeCV16UC2 is a Mat of 16-bit unsigned int with 2 channels
+	MatTypeCV16UC2 = MatTypeCV16U + MatChannels2
+
+	// MatTypeCV16UC3 is a Mat of 16-bit unsigned int with 3 channels
+	MatTypeCV16UC3 = MatTypeCV16U + MatChannels3
+
+	// MatTypeCV16UC4 is a Mat of 16-bit unsigned int with 4 channels
+	MatTypeCV16UC4 = MatTypeCV16U + MatChannels4
+
+	// MatTypeCV16SC1 is a Mat of 16-bit signed int with a single channel
+	MatTypeCV16SC1 = MatTypeCV16S + MatChannels1
+
+	// MatTypeCV16SC3 is a Mat of 16-bit signed int with 3 channels
+	MatTypeCV16SC3 = MatTypeCV16S + MatChannels3
+
+	// MatTypeCV16SC4 is a Mat of 16-bit signed int with 4 channels
+	MatTypeCV16SC4 = MatTypeCV16S + MatChannels4
+
+	// MatTypeCV32SC1 is a Mat of 32-bit signed int with a single channel
+	MatTypeCV32SC1 = MatTypeCV32S + MatChannels1
+
+	// MatTypeCV32SC2 is a Mat of 32-bit signed int with 2 channels
+	MatTypeCV32SC2 = MatTypeCV32S + MatChannels2
+
+	// MatTypeCV32SC3 is a Mat of 32-bit signed int with 3 channels
+	MatTypeCV32SC3 = MatTypeCV32S + MatChannels3
+
+	// MatTypeCV32SC4 is a Mat of 32-bit signed int with 4 channels
+	MatTypeCV32SC4 = MatTypeCV32S + MatChannels4
+
+	// MatTypeCV32FC1 is a Mat of 32-bit float int with a single channel
+	MatTypeCV32FC1 = MatTypeCV32F + MatChannels1
+
+	// MatTypeCV32FC2 is a Mat of 32-bit float int with 2 channels
+	MatTypeCV32FC2 = MatTypeCV32F + MatChannels2
+
+	// MatTypeCV32FC3 is a Mat of 32-bit float int with 3 channels
+	MatTypeCV32FC3 = MatTypeCV32F + MatChannels3
+
+	// MatTypeCV32FC4 is a Mat of 32-bit float int with 4 channels
+	MatTypeCV32FC4 = MatTypeCV32F + MatChannels4
+
+	// MatTypeCV64FC1 is a Mat of 64-bit float int with a single channel
+	MatTypeCV64FC1 = MatTypeCV64F + MatChannels1
+
+	// MatTypeCV64FC2 is a Mat of 64-bit float int with 2 channels
+	MatTypeCV64FC2 = MatTypeCV64F + MatChannels2
+
+	// MatTypeCV64FC3 is a Mat of 64-bit float int with 3 channels
+	MatTypeCV64FC3 = MatTypeCV64F + MatChannels3
+
+	// MatTypeCV64FC4 is a Mat of 64-bit float int with 4 channels
+	MatTypeCV64FC4 = MatTypeCV64F + MatChannels4
 )
 
 // CompareType is used for Compare operations to indicate which kind of
@@ -77,20 +146,25 @@ const (
 	CompareEQ CompareType = 0
 
 	// CompareGT src1 is greater than src2.
-	CompareGT = 1
+	CompareGT CompareType = 1
 
 	// CompareGE src1 is greater than or equal to src2.
-	CompareGE = 2
+	CompareGE CompareType = 2
 
 	// CompareLT src1 is less than src2.
-	CompareLT = 3
+	CompareLT CompareType = 3
 
 	// CompareLE src1 is less than or equal to src2.
-	CompareLE = 4
+	CompareLE CompareType = 4
 
 	// CompareNE src1 is unequal to src2.
-	CompareNE = 5
+	CompareNE CompareType = 5
 )
+
+type Point2f struct {
+	X float32
+	Y float32
+}
 
 var ErrEmptyByteSlice = errors.New("empty byte array")
 
@@ -201,6 +275,11 @@ func (m *Mat) ConvertTo(dst *Mat, mt MatType) {
 	return
 }
 
+func (m *Mat) ConvertToWithParams(dst *Mat, mt MatType, alpha, beta float32) {
+	C.Mat_ConvertToWithParams(m.p, dst.p, C.int(mt), C.float(alpha), C.float(beta))
+	return
+}
+
 // Total returns the total number of array elements.
 //
 // For further details, please see:
@@ -218,6 +297,7 @@ func (m *Mat) Total() int {
 func (m *Mat) Size() (dims []int) {
 	cdims := C.IntVector{}
 	C.Mat_Size(m.p, &cdims)
+	defer C.IntVector_Close(cdims)
 
 	h := &reflect.SliceHeader{
 		Data: uintptr(unsafe.Pointer(cdims.val)),
@@ -374,9 +454,20 @@ func (m *Mat) ConvertFp16() Mat {
 }
 
 // Mean calculates the mean value M of array elements, independently for each channel, and return it as Scalar
-// TODO pass second paramter with mask
+// For further details, please see:
+// https://docs.opencv.org/master/d2/de8/group__core__array.html#ga191389f8a0e58180bb13a727782cd461
+//
 func (m *Mat) Mean() Scalar {
 	s := C.Mat_Mean(m.p)
+	return NewScalar(float64(s.val1), float64(s.val2), float64(s.val3), float64(s.val4))
+}
+
+// MeanWithMask calculates the mean value M of array elements,independently for each channel,
+// and returns it as Scalar vector while applying the mask.
+// https://docs.opencv.org/master/d2/de8/group__core__array.html#ga191389f8a0e58180bb13a727782cd461
+//
+func (m *Mat) MeanWithMask(mask Mat) Scalar {
+	s := C.Mat_MeanWithMask(m.p, mask.p)
 	return NewScalar(float64(s.val1), float64(s.val2), float64(s.val3), float64(s.val4))
 }
 
@@ -648,6 +739,17 @@ func (m *Mat) DivideFloat(val float32) {
 	C.Mat_DivideFloat(m.p, C.float(val))
 }
 
+// MultiplyMatrix multiplies matrix (m*x)
+func (m *Mat) MultiplyMatrix(x Mat) Mat {
+	return newMat(C.Mat_MultiplyMatrix(m.p, x.p))
+}
+
+// T  transpose matrix
+// https://docs.opencv.org/4.1.2/d3/d63/classcv_1_1Mat.html#aaa428c60ccb6d8ea5de18f63dfac8e11
+func (m *Mat) T() Mat {
+	return newMat(C.Mat_T(m.p))
+}
+
 // ToImage converts a Mat to a image.Image.
 func (m *Mat) ToImage() (image.Image, error) {
 	t := m.Type()
@@ -862,7 +964,7 @@ func BitwiseXorWithMask(src1 Mat, src2 Mat, dst *Mat, mask Mat) {
 // For further details, please see:
 // https://docs.opencv.org/master/d2/de8/group__core__array.html#ga4ba778a1c57f83233b1d851c83f5a622
 //
-func BatchDistance(src1 Mat, src2 Mat, dist Mat, dtype int, nidx Mat, normType int, K int, mask Mat, update int, crosscheck bool) {
+func BatchDistance(src1 Mat, src2 Mat, dist Mat, dtype MatType, nidx Mat, normType NormType, K int, mask Mat, update int, crosscheck bool) {
 	C.Mat_BatchDistance(src1.p, src2.p, dist.p, C.int(dtype), nidx.p, C.int(normType), C.int(K), mask.p, C.int(update), C.bool(crosscheck))
 }
 
@@ -888,19 +990,19 @@ const (
 	CovarScrambled CovarFlags = 0
 
 	// CovarNormal indicates to use normal covariation.
-	CovarNormal = 1
+	CovarNormal CovarFlags = 1
 
 	// CovarUseAvg indicates to use average covariation.
-	CovarUseAvg = 2
+	CovarUseAvg CovarFlags = 2
 
 	// CovarScale indicates to use scaled covariation.
-	CovarScale = 4
+	CovarScale CovarFlags = 4
 
 	// CovarRows indicates to use covariation on rows.
-	CovarRows = 8
+	CovarRows CovarFlags = 8
 
 	// CovarCols indicates to use covariation on columns.
-	CovarCols = 16
+	CovarCols CovarFlags = 16
 )
 
 // CalcCovarMatrix calculates the covariance matrix of a set of vectors.
@@ -908,7 +1010,7 @@ const (
 // For further details, please see:
 // https://docs.opencv.org/master/d2/de8/group__core__array.html#ga017122d912af19d7d0d2cccc2d63819f
 //
-func CalcCovarMatrix(samples Mat, covar *Mat, mean *Mat, flags CovarFlags, ctype int) {
+func CalcCovarMatrix(samples Mat, covar *Mat, mean *Mat, flags CovarFlags, ctype MatType) {
 	C.Mat_CalcCovarMatrix(samples.p, covar.p, mean.p, C.int(flags), C.int(ctype))
 }
 
@@ -996,24 +1098,24 @@ const (
 	DftForward DftFlags = 0
 
 	// DftInverse performs an inverse 1D or 2D transform.
-	DftInverse = 1
+	DftInverse DftFlags = 1
 
 	// DftScale scales the result: divide it by the number of array elements. Normally, it is combined with DFT_INVERSE.
-	DftScale = 2
+	DftScale DftFlags = 2
 
 	// DftRows performs a forward or inverse transform of every individual row of the input matrix.
-	DftRows = 4
+	DftRows DftFlags = 4
 
 	// DftComplexOutput performs a forward transformation of 1D or 2D real array; the result, though being a complex array, has complex-conjugate symmetry
-	DftComplexOutput = 16
+	DftComplexOutput DftFlags = 16
 
 	// DftRealOutput performs an inverse transformation of a 1D or 2D complex array; the result is normally a complex array of the same size,
 	// however, if the input array has conjugate-complex symmetry (for example, it is a result of forward transformation with DFT_COMPLEX_OUTPUT flag),
 	// the output is a real array.
-	DftRealOutput = 32
+	DftRealOutput DftFlags = 32
 
 	// DftComplexInput specifies that input is complex input. If this flag is set, the input must have 2 channels.
-	DftComplexInput = 64
+	DftComplexInput DftFlags = 64
 
 	// DctInverse performs an inverse 1D or 2D dct transform.
 	DctInverse = DftInverse
@@ -1163,9 +1265,9 @@ const (
 	// Rotate90Clockwise allows to rotate image 90 degrees clockwise
 	Rotate90Clockwise RotateFlag = 0
 	// Rotate180Clockwise allows to rotate image 180 degrees clockwise
-	Rotate180Clockwise = 1
+	Rotate180Clockwise RotateFlag = 1
 	// Rotate90CounterClockwise allows to rotate 270 degrees clockwise
-	Rotate90CounterClockwise = 2
+	Rotate90CounterClockwise RotateFlag = 2
 )
 
 // Rotate rotates a 2D array in multiples of 90 degrees
@@ -1243,6 +1345,43 @@ func InsertChannel(src Mat, dst *Mat, coi int) {
 //
 func Invert(src Mat, dst *Mat, flags int) float64 {
 	ret := C.Mat_Invert(src.p, dst.p, C.int(flags))
+	return float64(ret)
+}
+
+// KMeansFlags for kmeans center selection
+//
+// For further details, please see:
+// https://docs.opencv.org/master/d0/de1/group__core.html#ga276000efe55ee2756e0c471c7b270949
+type KMeansFlags int
+
+const (
+	// KMeansRandomCenters selects random initial centers in each attempt.
+	KMeansRandomCenters KMeansFlags = 0
+	// KMeansPPCenters uses kmeans++ center initialization by Arthur and Vassilvitskii [Arthur2007].
+	KMeansPPCenters KMeansFlags = 1
+	// KMeansUseInitialLabels uses the user-supplied lables during the first (and possibly the only) attempt
+	// instead of computing them from the initial centers. For the second and further attempts, use the random or semi-random     // centers. Use one of KMEANS_*_CENTERS flag to specify the exact method.
+	KMeansUseInitialLabels KMeansFlags = 2
+)
+
+// KMeans finds centers of clusters and groups input samples around the clusters.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/d5/d38/group__core__cluster.html#ga9a34dc06c6ec9460e90860f15bcd2f88
+//
+func KMeans(data Mat, k int, bestLabels *Mat, criteria TermCriteria, attempts int, flags KMeansFlags, centers *Mat) float64 {
+	ret := C.KMeans(data.p, C.int(k), bestLabels.p, criteria.p, C.int(attempts), C.int(flags), centers.p)
+	return float64(ret)
+}
+
+// KMeansPoints finds centers of clusters and groups input samples around the clusters.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/d5/d38/group__core__cluster.html#ga9a34dc06c6ec9460e90860f15bcd2f88
+//
+func KMeansPoints(points []image.Point, k int, bestLabels *Mat, criteria TermCriteria, attempts int, flags KMeansFlags, centers *Mat) float64 {
+	cPoints := toCPoints(points)
+	ret := C.KMeansPoints(cPoints, C.int(k), bestLabels.p, criteria.p, C.int(attempts), C.int(flags), centers.p)
 	return float64(ret)
 }
 
@@ -1344,6 +1483,47 @@ func MinMaxLoc(input Mat) (minVal, maxVal float32, minLoc, maxLoc image.Point) {
 	return float32(cMinVal), float32(cMaxVal), minLoc, maxLoc
 }
 
+// Copies specified channels from input arrays to the specified channels of output arrays.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/d2/de8/group__core__array.html#ga51d768c270a1cdd3497255017c4504be
+//
+func MixChannels(src []Mat, dst []Mat, fromTo []int) {
+	cSrcArray := make([]C.Mat, len(src))
+	for i, r := range src {
+		cSrcArray[i] = r.p
+	}
+	cSrcMats := C.struct_Mats{
+		mats:   (*C.Mat)(&cSrcArray[0]),
+		length: C.int(len(src)),
+	}
+
+	cDstArray := make([]C.Mat, len(dst))
+	for i, r := range dst {
+		cDstArray[i] = r.p
+	}
+	cDstMats := C.struct_Mats{
+		mats:   (*C.Mat)(&cDstArray[0]),
+		length: C.int(len(dst)),
+	}
+
+	cFromToArray := make([]C.int, len(fromTo))
+	for i, ft := range fromTo {
+		cFromToArray[i] = C.int(ft)
+	}
+
+	cFromToIntVector := C.IntVector{
+		val:    (*C.int)(&cFromToArray[0]),
+		length: C.int(len(fromTo)),
+	}
+
+	C.Mat_MixChannels(cSrcMats, cDstMats, cFromToIntVector)
+
+	for i := C.int(0); i < cDstMats.length; i++ {
+		dst[i].p = C.Mats_get(cDstMats, i)
+	}
+}
+
 //Mulspectrums performs the per-element multiplication of two Fourier spectrums.
 //
 // For further details, please see:
@@ -1363,6 +1543,16 @@ func Multiply(src1 Mat, src2 Mat, dst *Mat) {
 	C.Mat_Multiply(src1.p, src2.p, dst.p)
 }
 
+// MultiplyWithParams calculates the per-element scaled product of two arrays.
+// Both input arrays must be of the same size and the same type.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/d2/de8/group__core__array.html#ga979d898a58d7f61c53003e162e7ad89f
+//
+func MultiplyWithParams(src1 Mat, src2 Mat, dst *Mat, scale float64, dtype MatType) {
+	C.Mat_MultiplyWithParams(src1.p, src2.p, dst.p, C.double(scale), C.int(dtype))
+}
+
 // NormType for normalization operations.
 //
 // For further details, please see:
@@ -1375,28 +1565,28 @@ const (
 	NormInf NormType = 1
 
 	// NormL1 indicates use L1 normalization.
-	NormL1 = 2
+	NormL1 NormType = 2
 
 	// NormL2 indicates use L2 normalization.
-	NormL2 = 4
+	NormL2 NormType = 4
 
 	// NormL2Sqr indicates use L2 squared normalization.
-	NormL2Sqr = 5
+	NormL2Sqr NormType = 5
 
 	// NormHamming indicates use Hamming normalization.
-	NormHamming = 6
+	NormHamming NormType = 6
 
 	// NormHamming2 indicates use Hamming 2-bit normalization.
-	NormHamming2 = 7
+	NormHamming2 NormType = 7
 
 	// NormTypeMask indicates use type mask for normalization.
-	NormTypeMask = 7
+	NormTypeMask NormType = 7
 
 	// NormRelative indicates use relative normalization.
-	NormRelative = 8
+	NormRelative NormType = 8
 
 	// NormMinMax indicates use min/max normalization.
-	NormMinMax = 32
+	NormMinMax NormType = 32
 )
 
 // Normalize normalizes the norm or value range of an array.
@@ -1438,35 +1628,35 @@ const (
 	Count TermCriteriaType = 1
 
 	// MaxIter is the maximum number of iterations or elements to compute.
-	MaxIter = 1
+	MaxIter TermCriteriaType = 1
 
 	// EPS is the desired accuracy or change in parameters at which the
 	// iterative algorithm stops.
-	EPS = 2
+	EPS TermCriteriaType = 2
 )
 
 type SolveDecompositionFlags int
 
 const (
 	// Gaussian elimination with the optimal pivot element chosen.
-	SolveDecompositionLu = 0
+	SolveDecompositionLu SolveDecompositionFlags = 0
 
 	// Singular value decomposition (SVD) method. The system can be over-defined and/or the matrix src1 can be singular.
-	SolveDecompositionSvd = 1
+	SolveDecompositionSvd SolveDecompositionFlags = 1
 
 	// Eigenvalue decomposition. The matrix src1 must be symmetrical.
-	SolveDecompositionEing = 2
+	SolveDecompositionEing SolveDecompositionFlags = 2
 
 	// Cholesky LL^T factorization. The matrix src1 must be symmetrical and positively defined.
-	SolveDecompositionCholesky = 3
+	SolveDecompositionCholesky SolveDecompositionFlags = 3
 
 	// QR factorization. The system can be over-defined and/or the matrix src1 can be singular.
-	SolveDecompositionQr = 4
+	SolveDecompositionQr SolveDecompositionFlags = 4
 
 	// While all the previous flags are mutually exclusive, this flag can be used together with any of the previous.
 	// It means that the normal equations 𝚜𝚛𝚌𝟷^T⋅𝚜𝚛𝚌𝟷⋅𝚍𝚜𝚝=𝚜𝚛𝚌𝟷^T𝚜𝚛𝚌𝟸 are solved instead of the original system
 	// 𝚜𝚛𝚌𝟷⋅𝚍𝚜𝚝=𝚜𝚛𝚌𝟸.
-	SolveDecompositionNormal = 5
+	SolveDecompositionNormal SolveDecompositionFlags = 5
 )
 
 // Solve solves one or more linear systems or least-squares problems.
@@ -1517,7 +1707,7 @@ const (
 // For further details, please see:
 // https://docs.opencv.org/master/d2/de8/group__core__array.html#ga4b78072a303f29d9031d56e5638da78e
 //
-func Reduce(src Mat, dst *Mat, dim int, rType ReduceTypes, dType int) {
+func Reduce(src Mat, dst *Mat, dim int, rType ReduceTypes, dType MatType) {
 	C.Mat_Reduce(src.p, dst.p, C.int(dim), C.int(rType), C.int(dType))
 }
 
@@ -1537,6 +1727,14 @@ func Repeat(src Mat, nY int, nX int, dst *Mat) {
 //
 func ScaleAdd(src1 Mat, alpha float64, src2 Mat, dst *Mat) {
 	C.Mat_ScaleAdd(src1.p, C.double(alpha), src2.p, dst.p)
+}
+
+// SetIdentity initializes a scaled identity matrix.
+// For further details, please see:
+//  https://docs.opencv.org/master/d2/de8/group__core__array.html#ga388d7575224a4a277ceb98ccaa327c99
+//
+func SetIdentity(src Mat, scalar float64) {
+	C.Mat_SetIdentity(src.p, C.double(scalar))
 }
 
 type SortFlags int
@@ -1582,6 +1780,7 @@ func SortIdx(src Mat, dst *Mat, flags SortFlags) {
 func Split(src Mat) (mv []Mat) {
 	cMats := C.struct_Mats{}
 	C.Mat_Split(src.p, &(cMats))
+	defer C.Mats_Close(cMats)
 	mv = make([]Mat, cMats.length)
 	for i := C.int(0); i < cMats.length; i++ {
 		mv[i].p = C.Mats_get(cMats, i)
@@ -1708,6 +1907,22 @@ type DMatch struct {
 	Distance float64
 }
 
+// Vecb is a generic vector of bytes.
+type Vecb []uint8
+
+// GetVecbAt returns a vector of bytes. Its size corresponds to the number
+// of channels of the Mat.
+func (m *Mat) GetVecbAt(row int, col int) Vecb {
+	ch := m.Channels()
+	v := make(Vecb, ch)
+
+	for c := 0; c < ch; c++ {
+		v[c] = m.GetUCharAt(row, col*ch+c)
+	}
+
+	return v
+}
+
 // Vecf is a generic vector of floats.
 type Vecf []float32
 
@@ -1719,6 +1934,22 @@ func (m *Mat) GetVecfAt(row int, col int) Vecf {
 
 	for c := 0; c < ch; c++ {
 		v[c] = m.GetFloatAt(row, col*ch+c)
+	}
+
+	return v
+}
+
+// Vecd is a generic vector of float64/doubles.
+type Vecd []float64
+
+// GetVecdAt returns a vector of float64s. Its size corresponds to the number
+// of channels of the Mat.
+func (m *Mat) GetVecdAt(row int, col int) Vecd {
+	ch := m.Channels()
+	v := make(Vecd, ch)
+
+	for c := 0; c < ch; c++ {
+		v[c] = m.GetDoubleAt(row, col*ch+c)
 	}
 
 	return v
@@ -1772,6 +2003,17 @@ func toGoBytes(b C.struct_ByteArray) []byte {
 	return C.GoBytes(unsafe.Pointer(b.data), b.length)
 }
 
+// Converts CStrings to a slice of Go strings even when the C strings are not contiguous in memory
+func toGoStrings(strs C.CStrings) []string {
+	length := int(strs.length)
+	tmpslice := (*[1 << 30]*C.char)(unsafe.Pointer(strs.strs))[:length:length]
+	gostrings := make([]string, length)
+	for i, s := range tmpslice {
+		gostrings[i] = C.GoString(s)
+	}
+	return gostrings
+}
+
 func toRectangles(ret C.Rects) []image.Rectangle {
 	cArray := ret.rects
 	length := int(ret.length)
@@ -1808,6 +2050,21 @@ func toCPoints(points []image.Point) C.struct_Points {
 	}
 }
 
+func toCPoints2f(points []Point2f) C.struct_Points2f {
+	cPointSlice := make([]C.struct_Point2f, len(points))
+	for i, point := range points {
+		cPointSlice[i] = C.struct_Point2f{
+			x: C.float(point.X),
+			y: C.float(point.Y),
+		}
+	}
+
+	return C.struct_Points2f{
+		points: (*C.Point2f)(&cPointSlice[0]),
+		length: C.int(len(points)),
+	}
+}
+
 func toCStrings(strs []string) C.struct_CStrings {
 	cStringsSlice := make([]*C.char, len(strs))
 	for i, s := range strs {
@@ -1818,4 +2075,22 @@ func toCStrings(strs []string) C.struct_CStrings {
 		strs:   (**C.char)(&cStringsSlice[0]),
 		length: C.int(len(strs)),
 	}
+}
+
+// RowRange creates a matrix header for the specified row span.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/d3/d63/classcv_1_1Mat.html#aa6542193430356ad631a9beabc624107
+//
+func (m *Mat) RowRange(start, end int) Mat {
+	return newMat(C.Mat_rowRange(m.p, C.int(start), C.int(end)))
+}
+
+// ColRange creates a matrix header for the specified column span.
+//
+// For further details, please see:
+// https://docs.opencv.org/master/d3/d63/classcv_1_1Mat.html#aadc8f9210fe4dec50513746c246fa8d9
+//
+func (m *Mat) ColRange(start, end int) Mat {
+	return newMat(C.Mat_colRange(m.p, C.int(start), C.int(end)))
 }

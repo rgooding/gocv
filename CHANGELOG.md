@@ -1,3 +1,183 @@
+0.25.0
+---
+* **all**
+    * update to opencv release 4.5.0
+* **build** 
+    * add file dependencies needed for DNN tests
+    * add verbose output for tests on CircleCI
+    * also run unit tests on non-free algorithms. YMMV.
+    * fix build with cuda
+    * remove Travis and switch to CircleCI using Docker based builds
+    * update CI builds to Go 1.15
+* **core**
+    * add mixChannels() method to Mat (#746)
+    * Add toGoStrings helper
+    * support ConvertToWithParams method
+* **dnn**
+    * Add NMSBoxes function (#736)
+    * Added ability to load Torch file. Tested features for extracting 128d vectors
+    * fix using wrong type for unconnectedlayertype
+    * use default ddepth for conversions to blob from image as recommended by @berak
+* **docker** 
+    * use separate dockerfile for opencv to avoid massive rebuild
+* **docs**
+    * add recent contributions to ROADMAP and also add cuda functions still in need of implementation
+    * display CircleCI badge in README
+    * minor improvements to CUDA docs in READMEs
+* **features2d**
+    * add FlannBasedMatcher
+    * add drawmatches (#720)
+    * fix memory leak in SIFT
+* **highgui**
+    * refactored ROI methods
+* **imgproc**
+    * Add option to return baseline with GetTextSizeWithBaseline
+* **objdetect** 
+    * Add QRCode DetectAndDecodeMulti
+* **videoio**
+    * Add video capture properties and set preferred api backend (#739)
+    * fix needed as discussed in golang/go issue #32479
+
+0.24.0
+---
+* **all**
+    * update Makefile and READMEChange constants and corresponding function signatures to have the correct types (#689)
+    * replace master branch terminology with release
+    * update to OpenCV 4.4.0
+* **calib3d**
+    * add FindHomography()
+    * add function EstimateAffinePartial2D()
+    * add GetAffineTransform() and GetAffineTransform2f()
+    * add UndistortPoints(), FisheyeUndistortPoints() and EstimateNewCameraMatrixForUndistortRectify()
+* **core**
+    * add MultiplyWithParams
+* **docs**
+    * add recent contributions to ROADMAP
+    * create CODE_OF_CONDUCT.md
+    * update copyright year
+* **features2d**
+    * close returned Mat from SIFT algorithm
+    * fix issue 707 with DrawKeyPoints
+    * SIFT patent now expired so is part of main OpenCV modules
+* **imgproc**
+    * change struct to remove GNU old-style field designator extension warning
+
+0.23.0
+---
+* **build**
+    * update Makefile and README
+    * update to use go1.14
+* **calib3d**
+    * add draw chessboard
+* **core**
+    * fix memory leak in Mat.Size() and Mat.Split() (#580)
+* **cuda**
+    * add build support
+    * add cuda backend/target
+    * add support for:
+        * cv::cuda::CannyEdgeDetector
+        * cv::cuda::CascadeClassifier Class
+        * cv::cuda::HOG Class
+    * remove breaking case statement
+* **dnn**
+    * avoid parallel test runs
+    * remove attempt at providing grayscale image blog conversion that uses mean adjustment
+* **docker**
+    * docker file last command change (#505)
+* **docs**
+    * add recent contributions to ROADMAP
+* **imgproc**
+    * add ErodeWithParams function
+    * add getGaussianKernel function
+    * add Go Point2f type and update GetPerspectiveTransform() (#589)
+    * add PhaseCorrelate binding (#626)
+    * added Polylines feature
+    * do not free contours data until after we have drawn the needed contours
+    * Threshold() should return a value (#620)
+* **make**
+    * added raspberry pi zero support to the makefile
+* **opencv**
+    * update to OpenCV 4.3.0
+* **openvino**
+    * add build support
+* **windows**
+    * add cmake flag for allocator stats counter type to avoid opencv issue #16398
+
+0.22.0
+---
+* **bgsegm**
+    * Add BackgroundSubtractorCNT
+* **calib3d**
+    * Added undistort function (#520)
+* **core**
+    * add functions (singular value decomposition, multiply between matrices, transpose matrix) (#559)
+    * Add new funcs (#578)
+    * add setIdentity() method to Mat
+    * add String method (#552)
+    * MatType: add missing constants
+* **dnn**
+    * Adding GetLayerNames()
+    * respect the bit depth of the input image to set the expected output when converting an image to a blob
+* **doc**
+    * change opencv version 3.x to 4.x
+* **docker**
+    * use Go1.13.5 for image
+* **imgcodecs**
+    * Fix webp image decode error (#523)
+imgcodecs: optimize copy of data used for IMDecode method
+* **imgproc**
+    * Add GetRectSubPix
+    * Added ClipLine
+    * Added InvertAffineTransform
+    * Added LinearPolar function (#524)
+    * correct ksize param used for MedianBlur unit test
+    * Feature/put text with line type (#527)
+    * FitEllipse
+    * In FillPoly and DrawContours functions, remove func() wrap to avoid memory freed before calling opencv functions. (#543)
+* **objdetect**
+    * Add support QR codes
+* **opencv**
+    * update to OpenCV 4.2.0 release
+* **openvino**
+    * Add openvino async
+* **test**
+    * Tolerate imprecise result in SolvePoly
+    * Tolerate imprecision in TestHoughLines
+
+0.21.0
+---
+* **build**
+    * added go clean --cache to clean target, see issue 458
+* **core**
+    * Add KMeans function
+    * added MeanWithMask function for Mats (#487)
+    * Fix possible resource leak
+* **cuda**
+    * added cudaoptflow
+    * added NewGpuMatFromMat which creates a GpuMat from a Mat
+    * Support for CUDA Image Warping (#494)
+* **dnn**
+    * add BlobFromImages (#467)
+    * add ImagesFromBlob (#468)
+* **docs**
+    * update ROADMAP with all recent contributions. Thank you!
+* **examples**
+    * face detection from image url by using IMDecode (#499)
+    * better format
+* **imgproc**
+    * Add calcBackProject
+    * Add CompareHist
+    * Add DistanceTransform and Watershed
+    * Add GrabCut
+    * Add Integral
+    * Add MorphologyExWithParams
+* **opencv**
+    * update to version 4.1.2
+* **openvino**
+    * updates needed for 2019 R3
+* **videoio**
+    * Added ToCodec to convert FOURCC string to numeric representation (#485)
+
 0.20.0
 ---
 * **build**

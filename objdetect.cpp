@@ -125,3 +125,54 @@ struct Rects GroupRectangles(struct Rects rects, int groupThreshold, double eps)
     Rects ret = {results, (int)vRect.size()};
     return ret;
 }
+
+// QRCodeDetector
+
+QRCodeDetector QRCodeDetector_New() {
+    return new cv::QRCodeDetector();
+}
+
+void QRCodeDetector_Close(QRCodeDetector qr) {
+    delete qr;
+}
+
+const char* QRCodeDetector_DetectAndDecode(QRCodeDetector qr, Mat input,Mat points,Mat straight_qrcode) {
+  cv::String *str = new cv::String(qr->detectAndDecode(*input,*points,*straight_qrcode)); 
+  return str->c_str();
+}
+
+bool QRCodeDetector_Detect(QRCodeDetector qr, Mat input,Mat points) {
+  return qr->detect(*input,*points); 
+}
+
+const char* QRCodeDetector_Decode(QRCodeDetector qr, Mat input,Mat inputPoints,Mat straight_qrcode) {
+  cv::String *str = new cv::String(qr->detectAndDecode(*input,*inputPoints,*straight_qrcode)); 
+  return str->c_str();
+}
+
+bool QRCodeDetector_DetectMulti(QRCodeDetector qr, Mat input, Mat points) {
+  return qr->detectMulti(*input,*points);
+}
+
+bool QRCodeDetector_DetectAndDecodeMulti(QRCodeDetector qr, Mat input, CStrings* decoded, Mat points, struct Mats* qrCodes) {
+  std::vector<cv::String> decodedCodes;
+  std::vector<cv::Mat> straightQrCodes;
+  bool res = qr->detectAndDecodeMulti(*input, decodedCodes, *points, straightQrCodes);
+  if (!res) {
+    return res;
+  }
+
+  qrCodes->mats = new Mat[straightQrCodes.size()];
+  qrCodes->length = straightQrCodes.size();
+  for (size_t i = 0; i < straightQrCodes.size(); i++) {
+     qrCodes->mats[i] = new cv::Mat(straightQrCodes[i]);
+  }
+
+  const char **strs = new const char*[decodedCodes.size()];
+  for (size_t i = 0; i < decodedCodes.size(); ++i) {
+      strs[i] = decodedCodes[i].c_str();
+  }
+  decoded->length = decodedCodes.size();
+  decoded->strs = strs;
+  return res;
+}

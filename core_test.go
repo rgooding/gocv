@@ -495,6 +495,17 @@ func TestMatConvert(t *testing.T) {
 	}
 }
 
+func TestMatConvertWithParams(t *testing.T) {
+	src := NewMatWithSize(100, 100, MatTypeCV8U)
+	defer src.Close()
+	dst := NewMat()
+	defer dst.Close()
+	src.ConvertToWithParams(&dst, MatTypeCV32F, 1.0/255.0, 0.0)
+	if dst.Empty() {
+		t.Error("TestConvertWithParams dst should not be empty.")
+	}
+}
+
 func TestMatConvertFp16(t *testing.T) {
 	src := NewMatWithSize(100, 100, MatTypeCV32F)
 	defer src.Close()
@@ -515,10 +526,22 @@ func TestMatSqrt(t *testing.T) {
 		t.Error("TestSqrt dst should not be empty.")
 	}
 }
+
 func TestMatMean(t *testing.T) {
 	mat := NewMatWithSize(100, 100, MatTypeCV8U)
 	defer mat.Close()
 	mean := mat.Mean()
+	if mean.Val1 != 0 {
+		t.Errorf("Mat Mean incorrect Val1")
+	}
+}
+
+func TestMatMeanWithMask(t *testing.T) {
+	mat := NewMatWithSize(100, 100, MatTypeCV8U)
+	defer mat.Close()
+	mask := NewMatWithSize(100, 100, MatTypeCV8U)
+	defer mask.Close()
+	mean := mat.MeanWithMask(mask)
 	if mean.Val1 != 0 {
 		t.Errorf("Mat Mean incorrect Val1")
 	}
@@ -773,6 +796,21 @@ func TestMatMutators(t *testing.T) {
 		}
 		mat.Close()
 	})
+	t.Run("MultiplyMatrix", func(t *testing.T) {
+		mat := NewMatWithSizeFromScalar(NewScalar(30.0, 0, 0, 0), 2, 1, MatTypeCV32F)
+		mat2 := NewMatWithSizeFromScalar(NewScalar(30.0, 0, 0, 0), 1, 2, MatTypeCV32F)
+		mat3 := mat.MultiplyMatrix(mat2)
+		for i := 0; i < mat3.Cols(); i++ {
+			for j := 0; j < mat3.Rows(); j++ {
+				if mat3.GetFloatAt(i, j) != 900.0 {
+					t.Errorf("MultiplyMatrix incorrect value: %v\n", mat3.GetFloatAt(i, j))
+				}
+			}
+		}
+		mat.Close()
+		mat2.Close()
+		mat3.Close()
+	})
 }
 
 func TestMatAbsDiff(t *testing.T) {
@@ -1024,6 +1062,32 @@ func TestMatMultiply(t *testing.T) {
 	}
 }
 
+func TestMatMultiplyWithParams(t *testing.T) {
+	mat1 := NewMatWithSize(101, 102, MatTypeCV64F)
+	defer mat1.Close()
+	mat2 := NewMatWithSize(101, 102, MatTypeCV64F)
+	defer mat2.Close()
+	mat3 := NewMat()
+	defer mat3.Close()
+	MultiplyWithParams(mat1, mat2, &mat3, 0.5, -1)
+	if mat3.Empty() {
+		t.Error("TestMatMultiplyWithParams dest mat3 should not be empty.")
+	}
+
+	// since this is a single channel Mat, only the first value in the scalar is used
+	mat4 := NewMatWithSizeFromScalar(NewScalar(2.0, 0.0, 0.0, 0.0), 101, 102, MatTypeCV64F)
+	defer mat4.Close()
+	mat5 := NewMatWithSizeFromScalar(NewScalar(3.0, 0.0, 0.0, 0.0), 101, 102, MatTypeCV64F)
+	defer mat5.Close()
+	MultiplyWithParams(mat4, mat5, &mat3, 2.0, -1)
+	if mat3.Empty() {
+		t.Error("TestMatMultiplyWithParams dest mat3 should not be empty.")
+	}
+	if mat3.GetDoubleAt(0, 0) != 12.0 {
+		t.Error("TestMatMultiplyWithParams invalue value in dest mat3.")
+	}
+}
+
 func TestMatNormalize(t *testing.T) {
 	src := NewMatWithSize(101, 102, MatTypeCV8U)
 	defer src.Close()
@@ -1128,9 +1192,9 @@ func TestSolvePoly(t *testing.T) {
 
 	diffError := SolvePoly(coeffs, &roots, 300)
 
-	expectedDiffError := 0.0
-	if diffError != expectedDiffError {
-		t.Errorf("TestSolvePoly was not exact, got an error of %f and should have been %f", diffError, expectedDiffError)
+	diffTolerance := 1.0e-61
+	if diffError > diffTolerance {
+		t.Errorf("TestSolvePoly was not exact, got an error of %e and should have been less than %f", diffError, diffTolerance)
 	}
 
 	if roots.GetFloatAt(0, 0) != 7.0 {
@@ -1266,6 +1330,32 @@ func TestScaleAdd(t *testing.T) {
 			result := dst.GetDoubleAt(row, col)
 			if result != expected {
 				t.Errorf("TestScaleAdd dst at row=%d col=%d should be %f and got %f.", row, col, expected, result)
+			}
+		}
+	}
+}
+
+func TestSetIdentity(t *testing.T) {
+	rows := 4
+	cols := 3
+	src := NewMatWithSize(rows, cols, MatTypeCV64F)
+	defer src.Close()
+	scalar := 2.5
+	SetIdentity(src, scalar)
+
+	if src.Empty() {
+		t.Error("TestSetIdentity src should not be empty.")
+	}
+
+	for row := 0; row < rows; row++ {
+		for col := 0; col < cols; col++ {
+			result := src.GetDoubleAt(row, col)
+			expected := 0.0
+			if row == col {
+				expected = scalar
+			}
+			if result != expected {
+				t.Errorf("TestSetIdentity src at row=%d col=%d should be %f and got %f.", row, col, expected, result)
 			}
 		}
 	}
@@ -1828,6 +1918,40 @@ func TestMatInvert(t *testing.T) {
 	}
 }
 
+func TestKMeans(t *testing.T) {
+	src := NewMatWithSize(4, 4, MatTypeCV32F) // only implemented for symm. Mats
+	defer src.Close()
+
+	bestLabels := NewMat()
+	defer bestLabels.Close()
+
+	centers := NewMat()
+	defer centers.Close()
+
+	criteria := NewTermCriteria(Count, 10, 1.0)
+	KMeans(src, 2, &bestLabels, criteria, 2, KMeansRandomCenters, &centers)
+	if bestLabels.Empty() {
+		t.Error("bla")
+	}
+}
+
+func TestKMeansPoints(t *testing.T) {
+	points := []image.Point{
+		image.Pt(0, 0),
+		image.Pt(1, 1),
+	}
+	bestLabels := NewMat()
+	defer bestLabels.Close()
+	centers := NewMat()
+	defer centers.Close()
+
+	criteria := NewTermCriteria(Count, 10, 1.0)
+	KMeansPoints(points, 2, &bestLabels, criteria, 2, KMeansRandomCenters, &centers)
+	if bestLabels.Empty() || bestLabels.Size()[0] != len(points) {
+		t.Error("Labels is not proper")
+	}
+}
+
 func TestMatLog(t *testing.T) {
 	src := NewMatWithSize(4, 3, MatTypeCV32F)
 	defer src.Close()
@@ -1899,6 +2023,47 @@ func TestMatMinMaxIdx(t *testing.T) {
 	}
 	if maxVal != 17 {
 		t.Errorf("TestMatMinMaxIdx maxVal should be 17, was %f", maxVal)
+	}
+}
+
+func TestMixChannels(t *testing.T) {
+	bgra := NewMatWithSizeFromScalar(NewScalar(255, 0, 0, 255), 10, 10, MatTypeCV8UC4)
+	defer bgra.Close()
+	bgr := NewMatWithSize(bgra.Rows(), bgra.Cols(), MatTypeCV8UC3)
+	defer bgr.Close()
+	alpha := NewMatWithSize(bgra.Rows(), bgra.Cols(), MatTypeCV8UC1)
+	defer alpha.Close()
+
+	dst := []Mat{bgr, alpha}
+
+	// bgra[0] -> bgr[2], bgra[1] -> bgr[1],
+	// bgra[2] -> bgr[0], bgra[3] -> alpha[0]
+	fromTo := []int{0, 2, 1, 1, 2, 0, 3, 3}
+
+	MixChannels([]Mat{bgra}, dst, fromTo)
+
+	bgrChans := Split(bgr)
+	scalarByte := []byte{0, 0, 255}
+	for c := 0; c < bgr.Channels(); c++ {
+		for i := 0; i < bgr.Rows(); i++ {
+			for j := 0; j < bgr.Cols(); j++ {
+				if s := bgrChans[c].GetUCharAt(i, j); s != scalarByte[c] {
+					t.Errorf("TestMixChannels incorrect bgr scalar: %v\n", s)
+				}
+			}
+		}
+	}
+
+	alphaChans := Split(alpha)
+	scalarByte = []byte{255}
+	for c := 0; c < alpha.Channels(); c++ {
+		for i := 0; i < alpha.Rows(); i++ {
+			for j := 0; j < alpha.Cols(); j++ {
+				if s := alphaChans[c].GetUCharAt(i, j); s != scalarByte[c] {
+					t.Errorf("TestMixChannels incorrect alpha scalar: %v\n", s)
+				}
+			}
+		}
 	}
 }
 
@@ -2078,6 +2243,30 @@ func TestGetTickFrequencyCount(t *testing.T) {
 	}
 }
 
+func TestMatT(t *testing.T) {
+	var q = []float32{1, 3, 2, 4}
+	src := NewMatWithSize(2, 2, MatTypeCV32F)
+	defer src.Close()
+	src.SetFloatAt(0, 0, 1)
+	src.SetFloatAt(0, 1, 2)
+	src.SetFloatAt(1, 0, 3)
+	src.SetFloatAt(1, 1, 4)
+
+	dst := src.T()
+	defer dst.Close()
+
+	ret, err := dst.DataPtrFloat32()
+	if err != nil {
+		t.Error(err)
+	}
+
+	for i := 0; i < len(ret); i++ {
+		if ret[i] != q[i] {
+			t.Errorf("MatT incorrect value: %v\n", ret[i])
+		}
+	}
+}
+
 func compareImages(img0, img1 image.Image) bool {
 	bounds0 := img0.Bounds()
 	bounds1 := img1.Bounds()
@@ -2111,4 +2300,46 @@ func compareImages(img0, img1 image.Image) bool {
 	}
 
 	return true
+}
+
+func TestColRowRange(t *testing.T) {
+	mat := NewMatWithSize(101, 102, MatTypeCV8U)
+	defer mat.Close()
+	if mat.Empty() {
+		t.Error("TestColRowRange should not be empty")
+	}
+
+	if mat.Rows() != 101 {
+		t.Errorf("TestColRowRange incorrect row count: %v\n", mat.Rows())
+	}
+
+	if mat.Cols() != 102 {
+		t.Errorf("TestColRowRange incorrect col count: %v\n", mat.Cols())
+	}
+
+	submatRow := mat.RowRange(0, 50)
+	defer submatRow.Close()
+	if submatRow.Rows() != 50 {
+		t.Errorf("TestColRowRange incorrect submatRow count: %v\n", submatRow.Rows())
+	}
+
+	submatCols := mat.ColRange(0, 50)
+	defer submatCols.Close()
+	if submatCols.Cols() != 50 {
+		t.Errorf("TestColRowRange incorrect submatCols count: %v\n", submatCols.Cols())
+	}
+}
+
+func Test_toGoStrings(t *testing.T) {
+	goStrings := []string{"foo", "bar"}
+	cStrings := toCStrings(goStrings)
+	result := toGoStrings(cStrings)
+	if len(goStrings) != len(result) {
+		t.Errorf("TesttoGoStrings failed: length of converted string is not equal to original \n")
+	}
+	for i, s := range goStrings {
+		if s != result[i] {
+			t.Errorf("TesttoGoStrings failed: strings are not equal. expected=%s, actusal=%s", s, result[i])
+		}
+	}
 }

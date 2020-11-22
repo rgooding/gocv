@@ -1,17 +1,19 @@
 # GoCV
 
-[![GoCV](https://raw.githubusercontent.com/hybridgroup/gocv/master/images/gocvlogo.jpg)](http://gocv.io/)
+[![GoCV](https://raw.githubusercontent.com/hybridgroup/gocv/release/images/gocvlogo.jpg)](http://gocv.io/)
 
 [![GoDoc](https://godoc.org/gocv.io/x/gocv?status.svg)](https://godoc.org/github.com/hybridgroup/gocv)
-[![Travis Build Status](https://travis-ci.org/hybridgroup/gocv.svg?branch=dev)](https://travis-ci.org/hybridgroup/gocv)
+[![CircleCI Build status](https://circleci.com/gh/hybridgroup/gocv/tree/dev.svg?style=svg)](https://circleci.com/gh/hybridgroup/gocv/tree/dev)
 [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/9asd5foet54ru69q/branch/dev?svg=true)](https://ci.appveyor.com/project/deadprogram/gocv/branch/dev)
 [![codecov](https://codecov.io/gh/hybridgroup/gocv/branch/dev/graph/badge.svg)](https://codecov.io/gh/hybridgroup/gocv)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hybridgroup/gocv)](https://goreportcard.com/report/github.com/hybridgroup/gocv)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/hybridgroup/gocv/blob/master/LICENSE.txt)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/hybridgroup/gocv/blob/release/LICENSE.txt)
 
 The GoCV package provides Go language bindings for the [OpenCV 4](http://opencv.org/) computer vision library.
 
-The GoCV package supports the latest releases of Go and OpenCV (v4.1.0) on Linux, macOS, and Windows. We intend to make the Go language a "first-class" client compatible with the latest developments in the OpenCV ecosystem.
+The GoCV package supports the latest releases of Go and OpenCV (v4.5.0) on Linux, macOS, and Windows. We intend to make the Go language a "first-class" client compatible with the latest developments in the OpenCV ecosystem.
+
+GoCV supports [CUDA](https://en.wikipedia.org/wiki/CUDA) for hardware acceleration using Nvidia GPUs. Check out the [CUDA README](./cuda/README.md) for more info on how to use GoCV with OpenCV/CUDA.
 
 GoCV also supports [Intel OpenVINO](https://software.intel.com/en-us/openvino-toolkit). Check out the [OpenVINO README](./openvino/README.md) for more info on how to use GoCV with the Intel OpenVINO toolkit.
 
@@ -43,7 +45,7 @@ func main() {
 
 ### Face detect
 
-![GoCV](https://raw.githubusercontent.com/hybridgroup/gocv/master/images/face-detect.jpg)
+![GoCV](https://raw.githubusercontent.com/hybridgroup/gocv/release/images/face-detect.jpg)
 
 This is a more complete example that opens a video capture device using device "0". It also uses the CascadeClassifier class to load an external data file containing the classifier data. The program grabs each frame from the video, then uses the classifier to detect faces. If any faces are found, it draws a green rectangle around each one, then displays the video in an output window:
 
@@ -127,27 +129,57 @@ To install GoCV, run the following command:
 go get -u -d gocv.io/x/gocv
 ```
 
-To run code that uses the GoCV package, you must also install OpenCV 4.0.0 on your system. Here are instructions for Ubuntu, Raspian, macOS, and Windows.
+To run code that uses the GoCV package, you must also install OpenCV 4.5.0 on your system. Here are instructions for Ubuntu, Raspian, macOS, and Windows.
 
 ## Ubuntu/Linux
 
 ### Installation
 
-You can use `make` to install OpenCV 4.1.0 with the handy `Makefile` included with this repo. If you already have installed OpenCV, you do not need to do so again. The installation performed by the `Makefile` is minimal, so it may remove OpenCV options such as Python or Java wrappers if you have already installed OpenCV some other way.
+You can use `make` to install OpenCV 4.5.0 with the handy `Makefile` included with this repo. If you already have installed OpenCV, you do not need to do so again. The installation performed by the `Makefile` is minimal, so it may remove OpenCV options such as Python or Java wrappers if you have already installed OpenCV some other way.
 
 #### Quick Install
 
-The following commands should do everything to download and install OpenCV 4.1.0 on Linux:
+The following commands should do everything to download and install OpenCV 4.5.0 on Linux:
 
 	cd $GOPATH/src/gocv.io/x/gocv
 	make install
 
+If you need static opencv libraries
+
+	make install BUILD_SHARED_LIBS=OFF
+
 If it works correctly, at the end of the entire process, the following message should be displayed:
 
-	gocv version: 0.20.0
-	opencv lib version: 4.1.0
+	gocv version: 0.22.0
+	opencv lib version: 4.5.0
 
 That's it, now you are ready to use GoCV.
+
+#### Install Cuda
+
+	[cuda directory](./cuda)
+
+#### Install OpenVINO
+
+	[openvino directory](./openvino)
+	
+#### Install OpenVINO and Cuda
+
+	The following commands should do everything to download and install OpenCV 4.5.0 with Cuda and OpenVINO on Linux:
+
+	cd $GOPATH/src/gocv.io/x/gocv
+	make install_all
+
+If you need static opencv libraries
+
+	make install_all BUILD_SHARED_LIBS=OFF
+
+If it works correctly, at the end of the entire process, the following message should be displayed:
+
+	gocv version: 0.22.0
+	opencv lib version: 4.5.0-openvino
+    cuda information:
+      Device 0:  "GeForce MX150"  2003Mb, sm_61, Driver/Runtime ver.10.0/10.0
 
 #### Complete Install
 
@@ -165,7 +197,7 @@ Next, you need to update the system, and install any required packages:
 
 #### Download source
 
-Now, download the OpenCV 4.1.0 and OpenCV Contrib source code:
+Now, download the OpenCV 4.5.0 and OpenCV Contrib source code:
 
 	make download
 
@@ -174,6 +206,10 @@ Now, download the OpenCV 4.1.0 and OpenCV Contrib source code:
 Build everything. This will take quite a while:
 
 	make build
+
+If you need static opencv libraries
+
+	make build BUILD_SHARED_LIBS=OFF
 
 #### Install
 
@@ -195,8 +231,8 @@ Now you should be able to build or run any of the examples:
 
 The version program should output the following:
 
-	gocv version: 0.20.0
-	opencv lib version: 4.1.0
+	gocv version: 0.22.0
+	opencv lib version: 4.5.0
 
 #### Cleanup extra files
 
@@ -231,10 +267,10 @@ The project now provides `Dockerfile` which lets you build [GoCV](https://gocv.i
 make docker
 ```
 
-By default Docker image built by running the command above ships [Go](https://golang.org/) version `1.11.2`, but if you would like to build an image which uses different version of `Go` you can override the default value when running the target command:
+By default Docker image built by running the command above ships [Go](https://golang.org/) version `1.13.5`, but if you would like to build an image which uses different version of `Go` you can override the default value when running the target command:
 
 ```
-make docker GOVERSION='1.11.1'
+make docker GOVERSION='1.13.5'
 ```
 
 #### Running GUI programs in Docker on macOS
@@ -281,19 +317,19 @@ There is a Docker image with Alpine 3.7 that has been created by project contrib
 
 ### Installation
 
-We have a special installation for the Raspberry Pi that includes some hardware optimizations. You use `make` to install OpenCV 4.1.0 with the handy `Makefile` included with this repo. If you already have installed OpenCV, you do not need to do so again. The installation performed by the `Makefile` is minimal, so it may remove OpenCV options such as Python or Java wrappers if you have already installed OpenCV some other way.
+We have a special installation for the Raspberry Pi that includes some hardware optimizations. You use `make` to install OpenCV 4.5.0 with the handy `Makefile` included with this repo. If you already have installed OpenCV, you do not need to do so again. The installation performed by the `Makefile` is minimal, so it may remove OpenCV options such as Python or Java wrappers if you have already installed OpenCV some other way.
 
 #### Quick Install
 
-The following commands should do everything to download and install OpenCV 4.1.0 on Raspbian:
+The following commands should do everything to download and install OpenCV 4.5.0 on Raspbian:
 
 	cd $GOPATH/src/gocv.io/x/gocv
 	make install_raspi
 
 If it works correctly, at the end of the entire process, the following message should be displayed:
 
-	gocv version: 0.20.0
-	opencv lib version: 4.1.0
+	gocv version: 0.22.0
+	opencv lib version: 4.5.0
 
 That's it, now you are ready to use GoCV.
 
@@ -301,21 +337,15 @@ That's it, now you are ready to use GoCV.
 
 ### Installation
 
-You can install OpenCV 4.1.0 using Homebrew.
+You can install OpenCV 4.5.0 using Homebrew.
 
 If you already have an earlier version of OpenCV (3.4.x) installed, you should probably remove it before installing the new version:
 
 	brew uninstall opencv
 
-You can then install OpenCV 4.1.0:
+You can then install OpenCV 4.5.0:
 
 	brew install opencv
-
-If you prefer, there is also an alternative Homebrew recipe will install only OpenCV 4.1.0 without all of the Python dependencies:
-
-	brew install hybridgroup/tools/opencv
-
-NOTE: Do not install both of these. Choose one.
 
 ### pkgconfig Installation
 pkg-config is used to determine the correct flags for compiling and linking OpenCV.
@@ -337,8 +367,8 @@ Now you should be able to build or run any of the examples:
 
 The version program should output the following:
 
-	gocv version: 0.20.0
-	opencv lib version: 4.1.0
+	gocv version: 0.22.0
+	opencv lib version: 4.5.0
 
 ### Cache builds
 
@@ -353,8 +383,8 @@ By default, pkg-config is used to determine the correct flags for compiling and 
 For example:
 
 	export CGO_CXXFLAGS="--std=c++11"
-	export CGO_CPPFLAGS="-I/usr/local/Cellar/opencv/4.1.0/include"
-	export CGO_LDFLAGS="-L/usr/local/Cellar/opencv/4.1.0/lib -lopencv_stitching -lopencv_superres -lopencv_videostab -lopencv_aruco -lopencv_bgsegm -lopencv_bioinspired -lopencv_ccalib -lopencv_dnn_objdetect -lopencv_dpm -lopencv_face -lopencv_photo -lopencv_fuzzy -lopencv_hfs -lopencv_img_hash -lopencv_line_descriptor -lopencv_optflow -lopencv_reg -lopencv_rgbd -lopencv_saliency -lopencv_stereo -lopencv_structured_light -lopencv_phase_unwrapping -lopencv_surface_matching -lopencv_tracking -lopencv_datasets -lopencv_dnn -lopencv_plot -lopencv_xfeatures2d -lopencv_shape -lopencv_video -lopencv_ml -lopencv_ximgproc -lopencv_calib3d -lopencv_features2d -lopencv_highgui -lopencv_videoio -lopencv_flann -lopencv_xobjdetect -lopencv_imgcodecs -lopencv_objdetect -lopencv_xphoto -lopencv_imgproc -lopencv_core"
+	export CGO_CPPFLAGS="-I/usr/local/Cellar/opencv/4.5.0/include"
+	export CGO_LDFLAGS="-L/usr/local/Cellar/opencv/4.5.0/lib -lopencv_stitching -lopencv_superres -lopencv_videostab -lopencv_aruco -lopencv_bgsegm -lopencv_bioinspired -lopencv_ccalib -lopencv_dnn_objdetect -lopencv_dpm -lopencv_face -lopencv_photo -lopencv_fuzzy -lopencv_hfs -lopencv_img_hash -lopencv_line_descriptor -lopencv_optflow -lopencv_reg -lopencv_rgbd -lopencv_saliency -lopencv_stereo -lopencv_structured_light -lopencv_phase_unwrapping -lopencv_surface_matching -lopencv_tracking -lopencv_datasets -lopencv_dnn -lopencv_plot -lopencv_xfeatures2d -lopencv_shape -lopencv_video -lopencv_ml -lopencv_ximgproc -lopencv_calib3d -lopencv_features2d -lopencv_highgui -lopencv_videoio -lopencv_flann -lopencv_xobjdetect -lopencv_imgcodecs -lopencv_objdetect -lopencv_xphoto -lopencv_imgproc -lopencv_core"
 
 Please note that you will need to run these 3 lines of code one time in your current session in order to build or run the code, in order to setup the needed ENV variables. Once you have done so, you can execute code that uses GoCV with your custom environment like this:
 
@@ -366,11 +396,11 @@ Please note that you will need to run these 3 lines of code one time in your cur
 
 The following assumes that you are running a 64-bit version of Windows 10.
 
-In order to build and install OpenCV 4.1.0 on Windows, you must first download and install MinGW-W64 and CMake, as follows.
+In order to build and install OpenCV 4.5.0 on Windows, you must first download and install MinGW-W64 and CMake, as follows.
 
 #### MinGW-W64
 
-Download and run the MinGW-W64 compiler installer from [https://sourceforge.net/projects/mingw-w64/?source=typ_redirect](https://sourceforge.net/projects/mingw-w64/?source=typ_redirect).
+Download and run the MinGW-W64 compiler installer from [https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/7.3.0/](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/7.3.0/).
 
 The latest version of the MinGW-W64 toolchain is `7.3.0`, but any version from `7.X` on should work.
 
@@ -382,9 +412,9 @@ Add the `C:\Program Files\mingw-w64\x86_64-7.3.0-posix-seh-rt_v5-rev2\mingw64\bi
 
 Download and install CMake [https://cmake.org/download/](https://cmake.org/download/) to the default location. CMake installer will add CMake to your system path.
 
-#### OpenCV 4.1.0 and OpenCV Contrib Modules
+#### OpenCV 4.5.0 and OpenCV Contrib Modules
 
-The following commands should do everything to download and install OpenCV 4.1.0 on Windows:
+The following commands should do everything to download and install OpenCV 4.5.0 on Windows:
 
 	chdir %GOPATH%\src\gocv.io\x\gocv
 	win_build_opencv.cmd
@@ -405,8 +435,8 @@ Now you should be able to build or run any of the command examples:
 
 The version program should output the following:
 
-	gocv version: 0.20.0
-	opencv lib version: 4.1.0
+	gocv version: 0.22.0
+	opencv lib version: 4.5.0
 
 That's it, now you are ready to use GoCV.
 
@@ -426,7 +456,7 @@ For example:
 
 	set CGO_CXXFLAGS="--std=c++11"
 	set CGO_CPPFLAGS=-IC:\opencv\build\install\include
-	set CGO_LDFLAGS=-LC:\opencv\build\install\x64\mingw\lib -lopencv_core401 -lopencv_face401 -lopencv_videoio401 -lopencv_imgproc401 -lopencv_highgui401 -lopencv_imgcodecs401 -lopencv_objdetect401 -lopencv_features2d401 -lopencv_video401 -lopencv_dnn401 -lopencv_xfeatures2d401 -lopencv_plot401 -lopencv_tracking401 -lopencv_img_hash401
+	set CGO_LDFLAGS=-LC:\opencv\build\install\x64\mingw\lib -lopencv_core412 -lopencv_face412 -lopencv_videoio412 -lopencv_imgproc412 -lopencv_highgui412 -lopencv_imgcodecs412 -lopencv_objdetect412 -lopencv_features2d412 -lopencv_video412 -lopencv_dnn412 -lopencv_xfeatures2d412 -lopencv_plot412 -lopencv_tracking412 -lopencv_img_hash412
 
 Please note that you will need to run these 3 lines of code one time in your current session in order to build or run the code, in order to setup the needed ENV variables. Once you have done so, you can execute code that uses GoCV with your custom environment like this:
 
@@ -560,6 +590,6 @@ This package was inspired by the original https://github.com/go-opencv/go-opencv
 
 ## License
 
-Licensed under the Apache 2.0 license. Copyright (c) 2017-2018 The Hybrid Group.
+Licensed under the Apache 2.0 license. Copyright (c) 2017-2020 The Hybrid Group.
 
 Logo generated by GopherizeMe - https://gopherize.me

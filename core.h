@@ -56,8 +56,17 @@ typedef struct Points {
     int length;
 } Points;
 
+// Wrapper for the vector of Point2f structs aka std::vector<Point2f>
+typedef struct Points2f {
+    Point2f* points;
+    int length;
+} Points2f;
+
 // Contour is alias for Points
 typedef Points Contour;
+
+// Contour2f is alias for Points2f
+typedef Points2f Contour2f;
 
 // Wrapper for the vector of Points vectors aka std::vector< std::vector<Point> >
 typedef struct Contours {
@@ -235,6 +244,7 @@ int Mat_Total(Mat m);
 void Mat_Size(Mat m, IntVector* res);
 void Mat_CopyToWithMask(Mat m, Mat dst, Mat mask);
 void Mat_ConvertTo(Mat m, Mat dst, int type);
+void Mat_ConvertToWithParams(Mat m, Mat dst, int type, float alpha, float beta);
 struct ByteArray Mat_ToBytes(Mat m);
 struct ByteArray Mat_DataPtr(Mat m);
 Mat Mat_Region(Mat m, Rect r);
@@ -242,6 +252,7 @@ Mat Mat_Reshape(Mat m, int cn, int rows);
 void Mat_PatchNaNs(Mat m);
 Mat Mat_ConvertFp16(Mat m);
 Scalar Mat_Mean(Mat m);
+Scalar Mat_MeanWithMask(Mat m, Mat mask);
 Mat Mat_Sqrt(Mat m);
 int Mat_Rows(Mat m);
 int Mat_Cols(Mat m);
@@ -284,6 +295,9 @@ void Mat_AddFloat(Mat m, float val);
 void Mat_SubtractFloat(Mat m, float val);
 void Mat_MultiplyFloat(Mat m, float val);
 void Mat_DivideFloat(Mat m, float val);
+Mat Mat_MultiplyMatrix(Mat x, Mat y);
+
+Mat Mat_T(Mat x);
 
 void LUT(Mat src, Mat lut, Mat dst);
 
@@ -331,6 +345,8 @@ void Mat_InRange(Mat src, Mat lowerb, Mat upperb, Mat dst);
 void Mat_InRangeWithScalar(Mat src, const Scalar lowerb, const Scalar upperb, Mat dst);
 void Mat_InsertChannel(Mat src, Mat dst, int coi);
 double Mat_Invert(Mat src, Mat dst, int flags);
+double KMeans(Mat data, int k, Mat bestLabels, TermCriteria criteria, int attempts, int flags, Mat centers);
+double KMeansPoints(Contour points, int k, Mat bestLabels, TermCriteria criteria, int attempts, int flags, Mat centers);
 void Mat_Log(Mat src, Mat dst);
 void Mat_Magnitude(Mat x, Mat y, Mat magnitude);
 void Mat_Max(Mat src1, Mat src2, Mat dst);
@@ -339,8 +355,10 @@ void Mat_Merge(struct Mats mats, Mat dst);
 void Mat_Min(Mat src1, Mat src2, Mat dst);
 void Mat_MinMaxIdx(Mat m, double* minVal, double* maxVal, int* minIdx, int* maxIdx);
 void Mat_MinMaxLoc(Mat m, double* minVal, double* maxVal, Point* minLoc, Point* maxLoc);
+void Mat_MixChannels(struct Mats src, struct Mats dst, struct IntVector fromTo);
 void Mat_MulSpectrums(Mat a, Mat b, Mat c, int flags);
 void Mat_Multiply(Mat src1, Mat src2, Mat dst);
+void Mat_MultiplyWithParams(Mat src1, Mat src2, Mat dst, double scale, int dtype);
 void Mat_Subtract(Mat src1, Mat src2, Mat dst);
 void Mat_Normalize(Mat src, Mat dst, double alpha, double beta, int typ);
 double Norm(Mat src1, int normType);
@@ -351,6 +369,7 @@ double Mat_SolvePoly(Mat coeffs, Mat roots, int maxIters);
 void Mat_Reduce(Mat src, Mat dst, int dim, int rType, int dType);
 void Mat_Repeat(Mat src, int nY, int nX, Mat dst);
 void Mat_ScaleAdd(Mat src1, double alpha, Mat src2, Mat dst);
+void Mat_SetIdentity(Mat src, double scalar);
 void Mat_Sort(Mat src, Mat dst, int flags);
 void Mat_SortIdx(Mat src, Mat dst, int flags);
 void Mat_Split(Mat src, struct Mats* mats);
@@ -367,6 +386,13 @@ TermCriteria TermCriteria_New(int typ, int maxCount, double epsilon);
 
 int64_t GetCVTickCount();
 double GetTickFrequency();
+
+Mat Mat_rowRange(Mat m,int startrow,int endrow);
+Mat Mat_colRange(Mat m,int startrow,int endrow);
+
+void IntVector_Close(struct IntVector ivec);
+
+void CStrings_Close(struct CStrings cstrs);
 
 #ifdef __cplusplus
 }
